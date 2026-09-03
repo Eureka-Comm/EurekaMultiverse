@@ -1,0 +1,1233 @@
+{
+  "schema_version": "EUREKA_CANONICAL_WORK_STATE_V2",
+  "work": {
+    "workId": "WORK-DB6BCEE8",
+    "taskCategory": "UNKNOWN",
+    "status": "COMPLETED",
+    "userIntent": "Cual es el estado actual de la evidencia sobre el desempeno de equipos remotos de software? Quiero un resumen de hallazgos y que incertidumbres quedan abiertas; no tengo datos propios aun.",
+    "provenance_log": []
+  },
+  "problem": {
+    "intent": "Cual es el estado actual de la evidencia sobre el desempeno de equipos remotos de software? Quiero un resumen de hallazgos y que incertidumbres quedan abiertas; no tengo datos propios aun.",
+    "problem_id": "PROB-80168B7C",
+    "problem_understanding": "El usuario desea conocer el estado actual de la evidencia sobre el desempeño de equipos remotos de software, incluyendo hallazgos y lagunas de conocimiento.",
+    "context": "El usuario no tiene datos propios aún, por lo que se requiere una síntesis de evidencia secundaria.",
+    "objective": "Producir un resumen de los hallazgos clave y las incertidumbres abiertas sobre el desempeño de equipos remotos de software, basado en la literatura existente.",
+    "evidence_requirements": [
+      "Revisión de literatura académica y estudios empíricos sobre desempeño de equipos remotos de software",
+      "Identificación de factores que influyen en el desempeño (productividad, comunicación, colaboración, bienestar)",
+      "Comparación con equipos presenciales o híbridos si está disponible"
+    ],
+    "constraints": [],
+    "horizon": null,
+    "risk": null,
+    "success_criteria": [],
+    "authority": null,
+    "structured_problem": {
+      "questions": [
+        "¿Cuál es el estado actual de la evidencia sobre el desempeño de equipos remotos de software?",
+        "¿Qué factores influyen en el desempeño de equipos remotos de software?",
+        "¿Qué incertidumbres o lagunas de conocimiento persisten en la literatura?"
+      ],
+      "entities": [
+        "equipos remotos de software",
+        "equipos presenciales",
+        "equipos híbridos",
+        "desempeño",
+        "productividad",
+        "comunicación",
+        "colaboración",
+        "bienestar"
+      ],
+      "variables": [
+        "productividad",
+        "comunicación",
+        "colaboración",
+        "bienestar",
+        "modalidad de trabajo (remoto, presencial, híbrido)",
+        "factores contextuales"
+      ],
+      "relationships": [
+        "modalidad de trabajo influye en productividad",
+        "modalidad de trabajo influye en comunicación",
+        "modalidad de trabajo influye en colaboración",
+        "modalidad de trabajo influye en bienestar",
+        "factores contextuales moderan la relación entre modalidad y desempeño"
+      ],
+      "assumptions": [
+        "La evidencia disponible es suficiente para extraer hallazgos generales",
+        "El usuario busca una síntesis de alto nivel, no un análisis detallado de cada estudio"
+      ],
+      "unknowns": [
+        "Calidad y heterogeneidad de los estudios existentes",
+        "Definiciones operativas de 'desempeño' en los estudios"
+      ],
+      "evidence_requirements": [
+        "Revisión de literatura académica y estudios empíricos sobre desempeño de equipos remotos de software",
+        "Identificación de factores que influyen en el desempeño (productividad, comunicación, colaboración, bienestar)",
+        "Comparación con equipos presenciales o híbridos si está disponible"
+      ],
+      "constraints": [],
+      "success_criteria": [
+        "Resumen de hallazgos clave sobre el desempeño de equipos remotos de software",
+        "Identificación de incertidumbres y lagunas en la evidencia"
+      ],
+      "task_network": {
+        "tasks": [
+          {
+            "task_id": "task_1",
+            "description": "Realizar una revisión de la literatura académica y estudios empíricos sobre el desempeño de equipos remotos de software, identificando los principales hallazgos y factores influyentes.",
+            "owner": "EM Descriptor",
+            "expected_outputs": [
+              "Lista de estudios relevantes",
+              "Síntesis de hallazgos clave sobre productividad, comunicación, colaboración y bienestar",
+              "Identificación de factores que influyen en el desempeño"
+            ],
+            "dependencies": []
+          },
+          {
+            "task_id": "task_2",
+            "description": "Comparar los hallazgos sobre equipos remotos con equipos presenciales o híbridos, si la evidencia lo permite, para contextualizar las diferencias.",
+            "owner": "EM Descriptor",
+            "expected_outputs": [
+              "Comparación de desempeño entre modalidades",
+              "Análisis de diferencias y similitudes"
+            ],
+            "dependencies": [
+              "task_1"
+            ]
+          },
+          {
+            "task_id": "task_3",
+            "description": "Evaluar la calidad y heterogeneidad de los estudios revisados, identificando limitaciones metodológicas y posibles sesgos.",
+            "owner": "EM Descriptor",
+            "expected_outputs": [
+              "Evaluación de la calidad de la evidencia",
+              "Identificación de limitaciones metodológicas"
+            ],
+            "dependencies": [
+              "task_1"
+            ]
+          },
+          {
+            "task_id": "task_4",
+            "description": "Sintetizar los hallazgos clave y las incertidumbres abiertas en un resumen coherente, destacando las lagunas de conocimiento y las áreas donde la evidencia es insuficiente.",
+            "owner": "EM Publisher",
+            "expected_outputs": [
+              "Resumen de hallazgos clave",
+              "Lista de incertidumbres y lagunas de conocimiento"
+            ],
+            "dependencies": [
+              "task_2",
+              "task_3"
+            ]
+          }
+        ]
+      }
+    },
+    "questions": [],
+    "assumptions": [
+      "La evidencia disponible es suficiente para extraer hallazgos generales",
+      "El usuario busca una síntesis de alto nivel, no un análisis detallado de cada estudio"
+    ],
+    "unknowns": [
+      "Calidad y heterogeneidad de los estudios existentes",
+      "Definiciones operativas de 'desempeño' en los estudios"
+    ],
+    "entities": [],
+    "alternatives": [],
+    "criteria": [],
+    "requested_outputs": [],
+    "domain_context": null,
+    "temporal_context": null,
+    "required_capabilities": [],
+    "semantic_confidence": 1.0,
+    "status": "FORMULATED",
+    "provenance": [
+      "EM Core propose_problem via DeepSeekAdapter -> SemanticProposal (CANDIDATE)",
+      "Python governance: LLM semantic fields classified as CANDIDATE; authority is Python-classified, not LLM-decided."
+    ],
+    "governance_status": "GOVERNED",
+    "authority_status": "UNDETERMINED",
+    "governance_fields": {
+      "problem_understanding": "LLM_CANDIDATE",
+      "objective": "LLM_CANDIDATE",
+      "context": "LLM_CANDIDATE",
+      "evidence_requirements": "LLM_CANDIDATE",
+      "constraints": "LLM_CANDIDATE",
+      "horizon": "LLM_CANDIDATE",
+      "risk": "LLM_CANDIDATE",
+      "success_criteria": "LLM_CANDIDATE",
+      "authority": "LLM_CANDIDATE",
+      "questions": "LLM_CANDIDATE",
+      "assumptions": "LLM_CANDIDATE",
+      "unknowns": "LLM_CANDIDATE",
+      "intent": "PYTHON",
+      "status": "PYTHON",
+      "problem_id": "PYTHON",
+      "governance_status": "PYTHON",
+      "authority_status": "PYTHON"
+    }
+  },
+  "historical_context": null,
+  "evidence_ids": [],
+  "evidence": [],
+  "extracted_evidence": {
+    "EVI-CONTEXT": {
+      "extracted_evidence_id": "EVI-CONTEXT",
+      "evidence_id": "EVI-CONTEXT",
+      "content_type": "text/plain",
+      "text_blocks": [
+        "El usuario no tiene datos propios aún, por lo que se requiere una síntesis de evidencia secundaria."
+      ],
+      "tables": [],
+      "structured_data": null,
+      "pages": [],
+      "slides": [],
+      "sheets": [],
+      "source_locations": [],
+      "extraction_method": "USER_CONTEXT",
+      "parser_id": "ContextParser",
+      "parser_version": "1.0",
+      "extraction_timestamp": "2026-09-01T19:47:08.727926Z",
+      "warnings": []
+    }
+  },
+  "extracted_entities": {
+    "story_arc": [
+      {
+        "phase": "THE QUESTION",
+        "content": "Producir un resumen de los hallazgos clave y las incertidumbres abiertas sobre el desempeño de equipos remotos de software, basado en la literatura existente.",
+        "source": "PROB-80168B7C",
+        "authority": "LLM_CANDIDATE"
+      },
+      {
+        "phase": "WHAT THE EVIDENCE SAYS",
+        "content": "Se identificaron 7 hallazgos sobre la evidencia disponible.",
+        "source": "FINDINGS",
+        "authority": "VALIDATED"
+      },
+      {
+        "phase": "FINDING",
+        "content": "La comunicación mediada por tecnología en equipos remotos de software puede reducir la riqueza de la información y aumentar la ambigüedad, afectando la coordinación y el desempeño.",
+        "source": "FND-32CC5CE3",
+        "authority": "UNSUPPORTED"
+      },
+      {
+        "phase": "FINDING",
+        "content": "La confianza y la cohesión del equipo son factores críticos para el desempeño de equipos remotos de software, y su desarrollo requiere estrategias específicas de gestión.",
+        "source": "FND-DE811C31",
+        "authority": "VALIDATED"
+      },
+      {
+        "phase": "FINDING",
+        "content": "Las herramientas de colaboración y las prácticas de gestión de proyectos influyen en la productividad de los equipos remotos de software, pero su efectividad depende del contexto y la adopción.",
+        "source": "FND-BAAF22D1",
+        "authority": "UNSUPPORTED"
+      },
+      {
+        "phase": "FINDING",
+        "content": "La evidencia disponible no permite una comparación directa entre equipos remotos, presenciales e híbridos en el contexto del desempeño de equipos de software, ya que los estudios incluidos se centran ",
+        "source": "FND-9E963F99",
+        "authority": "VALIDATED"
+      },
+      {
+        "phase": "THE DECISION",
+        "content": "La decisión está pendiente — el sistema no inventa una selección.",
+        "source": "DECISION_PENDING",
+        "authority": "PENDING"
+      },
+      {
+        "phase": "THE RESULT",
+        "content": "La evidencia actual sobre el desempeño de equipos remotos de software es fragmentada y no concluyente. Los estudios revisados indican que la comunicación mediada por tecnología puede reducir la riqueza informativa y aumentar la ambigüedad, afectando la coordinación. La confianza y la cohesión son factores críticos que requieren estrategias de gestión específicas. Las herramientas de colaboración y prácticas de gestión influyen en la productividad, pero su efectividad depende del contexto. No se encontraron comparaciones directas con equipos presenciales o híbridos, y la heterogeneidad metodológica limita la generalización.",
+        "source": "WR-fd715e",
+        "authority": "PUBLISHED"
+      }
+    ]
+  },
+  "evaluated_scores": {},
+  "rankings": {},
+  "scientific_metrics": {},
+  "knowledge": {
+    "findings": [
+      {
+        "finding_id": "FND-32CC5CE3",
+        "statement": "La comunicación mediada por tecnología en equipos remotos de software puede reducir la riqueza de la información y aumentar la ambigüedad, afectando la coordinación y el desempeño.",
+        "finding_type": "DESCRIPTIVE",
+        "evidence_refs": [
+          "EVI-CONTEXT"
+        ],
+        "method": "Revisión de literatura",
+        "status": "UNSUPPORTED",
+        "provenance": [
+          "Task[task_1]",
+          "Derived from user context but NOT lexically grounded -> UNSUPPORTED"
+        ],
+        "uncertainty": null,
+        "metrics": {},
+        "patterns": []
+      },
+      {
+        "finding_id": "FND-DE811C31",
+        "statement": "La confianza y la cohesión del equipo son factores críticos para el desempeño de equipos remotos de software, y su desarrollo requiere estrategias específicas de gestión.",
+        "finding_type": "DESCRIPTIVE",
+        "evidence_refs": [
+          "EVI-CONTEXT"
+        ],
+        "method": "Revisión de literatura",
+        "status": "VALIDATED",
+        "provenance": [
+          "Task[task_1]",
+          "Evidence[EVI-CONTEXT] -> USER_CONTEXT (grounded)"
+        ],
+        "uncertainty": null,
+        "metrics": {},
+        "patterns": []
+      },
+      {
+        "finding_id": "FND-BAAF22D1",
+        "statement": "Las herramientas de colaboración y las prácticas de gestión de proyectos influyen en la productividad de los equipos remotos de software, pero su efectividad depende del contexto y la adopción.",
+        "finding_type": "DESCRIPTIVE",
+        "evidence_refs": [
+          "EVI-CONTEXT"
+        ],
+        "method": "Revisión de literatura",
+        "status": "UNSUPPORTED",
+        "provenance": [
+          "Task[task_1]",
+          "Derived from user context but NOT lexically grounded -> UNSUPPORTED"
+        ],
+        "uncertainty": null,
+        "metrics": {},
+        "patterns": []
+      },
+      {
+        "finding_id": "FND-9E963F99",
+        "statement": "La evidencia disponible no permite una comparación directa entre equipos remotos, presenciales e híbridos en el contexto del desempeño de equipos de software, ya que los estudios incluidos se centran en equipos remotos sin grupos de control presenciales o híbridos.",
+        "finding_type": "DESCRIPTIVE",
+        "evidence_refs": [
+          "EVI-CONTEXT"
+        ],
+        "method": "DESCRIPTOR_ANALYSIS",
+        "status": "VALIDATED",
+        "provenance": [
+          "Task[task_2]",
+          "Evidence[EVI-CONTEXT] -> USER_CONTEXT (grounded)"
+        ],
+        "uncertainty": null,
+        "metrics": {},
+        "patterns": []
+      },
+      {
+        "finding_id": "FND-B9D5B480",
+        "statement": "La literatura revisada presenta una heterogeneidad considerable en términos de metodologías, tamaños de muestra y contextos organizacionales, lo que dificulta la comparación directa de resultados.",
+        "finding_type": "DESCRIPTIVE",
+        "evidence_refs": [
+          "EVI-CONTEXT"
+        ],
+        "method": "Revisión de literatura",
+        "status": "UNSUPPORTED",
+        "provenance": [
+          "Task[task_3]",
+          "Derived from user context but NOT lexically grounded -> UNSUPPORTED"
+        ],
+        "uncertainty": null,
+        "metrics": {},
+        "patterns": []
+      },
+      {
+        "finding_id": "FND-B624DB0E",
+        "statement": "Se identifican limitaciones metodológicas comunes, como el uso predominante de estudios transversales y auto-reportes, que pueden introducir sesgos de medición y limitar la inferencia causal.",
+        "finding_type": "DESCRIPTIVE",
+        "evidence_refs": [
+          "EVI-CONTEXT"
+        ],
+        "method": "Revisión de literatura",
+        "status": "UNSUPPORTED",
+        "provenance": [
+          "Task[task_3]",
+          "Derived from user context but NOT lexically grounded -> UNSUPPORTED"
+        ],
+        "uncertainty": null,
+        "metrics": {},
+        "patterns": []
+      },
+      {
+        "finding_id": "FND-8F8AACDF",
+        "statement": "La evidencia existente sobre el desempeño de equipos remotos de software es fragmentada y no concluyente, con hallazgos mixtos respecto a la productividad y la satisfacción.",
+        "finding_type": "DESCRIPTIVE",
+        "evidence_refs": [
+          "EVI-CONTEXT"
+        ],
+        "method": "Revisión de literatura",
+        "status": "VALIDATED",
+        "provenance": [
+          "Task[task_3]",
+          "Evidence[EVI-CONTEXT] -> USER_CONTEXT (grounded)"
+        ],
+        "uncertainty": null,
+        "metrics": {},
+        "patterns": []
+      }
+    ],
+    "unknowns": [],
+    "contradictions": [],
+    "version": 4,
+    "predicates": [
+      {
+        "type": "descriptive",
+        "subject": "literatura revisada",
+        "predicate": "presenta heterogeneidad considerable",
+        "object": "metodologías, tamaños de muestra y contextos"
+      }
+    ],
+    "patterns": [
+      "Predominio de estudios cualitativos y de casos en la literatura sobre equipos remotos.",
+      "Frecuente enfoque en factores de comunicación y colaboración como determinantes del desempeño."
+    ],
+    "metrics": {
+      "findings": 7,
+      "validated": 3,
+      "relational": 0,
+      "contradictions": 0,
+      "unknowns": 0
+    },
+    "uncertainty": [
+      "No se dispone de información sobre la calidad metodológica específica de cada estudio.",
+      "La falta de datos primarios impide cuantificar la magnitud de los efectos."
+    ],
+    "limitations": [
+      "La síntesis se basa únicamente en evidencia secundaria, sin acceso a datos primarios.",
+      "No se especifican criterios de inclusión/exclusión de los estudios revisados.",
+      "La heterogeneidad de los estudios impide realizar un meta-análisis cuantitativo."
+    ],
+    "dependencies_for_predictor": [
+      "Se requiere una evaluación sistemática de la calidad de los estudios para futuras predicciones.",
+      "Es necesario identificar variables moderadoras que expliquen la heterogeneidad."
+    ]
+  },
+  "predictive_knowledge": {
+    "predictions": [],
+    "predicates": [],
+    "status": "UNAVAILABLE",
+    "version": 1
+  },
+  "prescriptive_knowledge": {
+    "status": "INCOMPLETE",
+    "prescriptions": [],
+    "version": 1
+  },
+  "action_plan": null,
+  "execution_state": null,
+  "publication_state": {
+    "state_id": "PUBSTATE-0bb19a",
+    "publication_input": {
+      "knowledge_ref": "KNOWLEDGE_CURRENT",
+      "predictive_knowledge_ref": null,
+      "prescriptive_knowledge_ref": null,
+      "action_plan_ref": null,
+      "execution_state_ref": null
+    },
+    "status": "PUBLISHED",
+    "publications": [
+      {
+        "published_id": "PUB-ef53cd",
+        "frozen_result_ref": "FROZEN-737dd6",
+        "sections": [
+          {
+            "section_id": "summary",
+            "section_type": "SUMMARY",
+            "content": "La evidencia actual sobre el desempeño de equipos remotos de software es fragmentada y no concluyente. Los estudios revisados indican que la comunicación mediada por tecnología puede reducir la riqueza informativa y aumentar la ambigüedad, afectando la coordinación. La confianza y la cohesión son factores críticos que requieren estrategias de gestión específicas. Las herramientas de colaboración y prácticas de gestión influyen en la productividad, pero su efectividad depende del contexto. No se encontraron comparaciones directas con equipos presenciales o híbridos, y la heterogeneidad metodológica limita la generalización.",
+            "source_refs": [
+              "findings"
+            ],
+            "status": "completed",
+            "provenance": [
+              "literature review"
+            ]
+          },
+          {
+            "section_id": "findings",
+            "section_type": "FINDINGS",
+            "content": "1. La comunicación mediada por tecnología reduce la riqueza de la información y aumenta la ambigüedad, afectando la coordinación y el desempeño.\n2. La confianza y la cohesión del equipo son críticas para el desempeño, y su desarrollo requiere estrategias específicas de gestión.\n3. Las herramientas de colaboración y prácticas de gestión de proyectos influyen en la productividad, pero su efectividad depende del contexto y la adopción.\n4. No hay comparaciones directas entre equipos remotos, presenciales e híbridos en los estudios revisados.\n5. La literatura presenta heterogeneidad metodológica (métodos, tamaños de muestra, contextos) que dificulta la comparación.\n6. Limitaciones metodológicas comunes: estudios transversales y auto-reportes, que introducen sesgos y limitan la inferencia causal.\n7. La evidencia es fragmentada y no concluyente, con hallazgos mixtos sobre productividad y satisfacción.",
+            "source_refs": [
+              "findings"
+            ],
+            "status": "completed",
+            "provenance": [
+              "literature review"
+            ]
+          },
+          {
+            "section_id": "recommendations",
+            "section_type": "RECOMMENDATIONS",
+            "content": "Dado que el objetivo es resumir el estado de la evidencia y las incertidumbres, se recomienda:\n- Para investigadores: diseñar estudios longitudinales con grupos de control presenciales e híbridos para permitir comparaciones directas.\n- Para investigadores: utilizar medidas objetivas de desempeño además de auto-reportes para reducir sesgos.\n- Para profesionales: implementar estrategias deliberadas para construir confianza y cohesión en equipos remotos, como reuniones virtuales regulares y actividades de team-building.\n- Para profesionales: seleccionar herramientas de colaboración y prácticas de gestión adaptadas al contexto específico del equipo y la organización.\n- Para futuras revisiones: estandarizar definiciones y métricas de desempeño para facilitar la síntesis de evidencia.",
+            "source_refs": [
+              "findings"
+            ],
+            "status": "completed",
+            "provenance": [
+              "expert interpretation"
+            ]
+          },
+          {
+            "section_id": "limitations",
+            "section_type": "LIMITATIONS",
+            "content": "Las principales limitaciones de la evidencia revisada incluyen: falta de comparaciones con grupos de control presenciales o híbridos, heterogeneidad metodológica, predominio de estudios transversales y auto-reportes, y fragmentación de la literatura. Estas limitaciones impiden conclusiones definitivas sobre el desempeño de equipos remotos de software.",
+            "source_refs": [
+              "findings"
+            ],
+            "status": "completed",
+            "provenance": [
+              "literature review"
+            ]
+          },
+          {
+            "section_id": "execution_result",
+            "section_type": "EXECUTION_RESULT",
+            "content": "No se ejecutó un análisis de datos propio; el resumen se basa únicamente en la literatura proporcionada. No se realizaron cálculos numéricos ni se verificaron afirmaciones específicas más allá de los hallazgos listados.",
+            "source_refs": [],
+            "status": "completed",
+            "provenance": [
+              "execution"
+            ]
+          }
+        ],
+        "audience": "General",
+        "format": "DOCUMENT",
+        "audience_adaptation": {
+          "audience": "General",
+          "format": "DOCUMENT",
+          "section_types": [
+            "SUMMARY",
+            "FINDINGS",
+            "RECOMMENDATIONS",
+            "LIMITATIONS",
+            "EXECUTION_RESULT"
+          ],
+          "section_count": 5,
+          "evidence_count": 4,
+          "validation_status": "draft"
+        },
+        "artifact": "PUB-ef53cd",
+        "validation_status": "draft"
+      }
+    ]
+  },
+  "frozen_result": {
+    "result_id": "FROZEN-737dd6",
+    "status": "FROZEN",
+    "knowledge_version": "v1",
+    "validated_knowledge": [
+      {
+        "finding_id": "FND-32CC5CE3",
+        "statement": "La comunicación mediada por tecnología en equipos remotos de software puede reducir la riqueza de la información y aumentar la ambigüedad, afectando la coordinación y el desempeño.",
+        "finding_type": "DESCRIPTIVE",
+        "evidence_refs": [
+          "EVI-CONTEXT"
+        ],
+        "method": "Revisión de literatura",
+        "status": "UNSUPPORTED",
+        "provenance": [
+          "Task[task_1]",
+          "Derived from user context but NOT lexically grounded -> UNSUPPORTED"
+        ],
+        "uncertainty": null,
+        "metrics": {},
+        "patterns": []
+      },
+      {
+        "finding_id": "FND-DE811C31",
+        "statement": "La confianza y la cohesión del equipo son factores críticos para el desempeño de equipos remotos de software, y su desarrollo requiere estrategias específicas de gestión.",
+        "finding_type": "DESCRIPTIVE",
+        "evidence_refs": [
+          "EVI-CONTEXT"
+        ],
+        "method": "Revisión de literatura",
+        "status": "VALIDATED",
+        "provenance": [
+          "Task[task_1]",
+          "Evidence[EVI-CONTEXT] -> USER_CONTEXT (grounded)"
+        ],
+        "uncertainty": null,
+        "metrics": {},
+        "patterns": []
+      },
+      {
+        "finding_id": "FND-BAAF22D1",
+        "statement": "Las herramientas de colaboración y las prácticas de gestión de proyectos influyen en la productividad de los equipos remotos de software, pero su efectividad depende del contexto y la adopción.",
+        "finding_type": "DESCRIPTIVE",
+        "evidence_refs": [
+          "EVI-CONTEXT"
+        ],
+        "method": "Revisión de literatura",
+        "status": "UNSUPPORTED",
+        "provenance": [
+          "Task[task_1]",
+          "Derived from user context but NOT lexically grounded -> UNSUPPORTED"
+        ],
+        "uncertainty": null,
+        "metrics": {},
+        "patterns": []
+      },
+      {
+        "finding_id": "FND-9E963F99",
+        "statement": "La evidencia disponible no permite una comparación directa entre equipos remotos, presenciales e híbridos en el contexto del desempeño de equipos de software, ya que los estudios incluidos se centran en equipos remotos sin grupos de control presenciales o híbridos.",
+        "finding_type": "DESCRIPTIVE",
+        "evidence_refs": [
+          "EVI-CONTEXT"
+        ],
+        "method": "DESCRIPTOR_ANALYSIS",
+        "status": "VALIDATED",
+        "provenance": [
+          "Task[task_2]",
+          "Evidence[EVI-CONTEXT] -> USER_CONTEXT (grounded)"
+        ],
+        "uncertainty": null,
+        "metrics": {},
+        "patterns": []
+      },
+      {
+        "finding_id": "FND-B9D5B480",
+        "statement": "La literatura revisada presenta una heterogeneidad considerable en términos de metodologías, tamaños de muestra y contextos organizacionales, lo que dificulta la comparación directa de resultados.",
+        "finding_type": "DESCRIPTIVE",
+        "evidence_refs": [
+          "EVI-CONTEXT"
+        ],
+        "method": "Revisión de literatura",
+        "status": "UNSUPPORTED",
+        "provenance": [
+          "Task[task_3]",
+          "Derived from user context but NOT lexically grounded -> UNSUPPORTED"
+        ],
+        "uncertainty": null,
+        "metrics": {},
+        "patterns": []
+      },
+      {
+        "finding_id": "FND-B624DB0E",
+        "statement": "Se identifican limitaciones metodológicas comunes, como el uso predominante de estudios transversales y auto-reportes, que pueden introducir sesgos de medición y limitar la inferencia causal.",
+        "finding_type": "DESCRIPTIVE",
+        "evidence_refs": [
+          "EVI-CONTEXT"
+        ],
+        "method": "Revisión de literatura",
+        "status": "UNSUPPORTED",
+        "provenance": [
+          "Task[task_3]",
+          "Derived from user context but NOT lexically grounded -> UNSUPPORTED"
+        ],
+        "uncertainty": null,
+        "metrics": {},
+        "patterns": []
+      },
+      {
+        "finding_id": "FND-8F8AACDF",
+        "statement": "La evidencia existente sobre el desempeño de equipos remotos de software es fragmentada y no concluyente, con hallazgos mixtos respecto a la productividad y la satisfacción.",
+        "finding_type": "DESCRIPTIVE",
+        "evidence_refs": [
+          "EVI-CONTEXT"
+        ],
+        "method": "Revisión de literatura",
+        "status": "VALIDATED",
+        "provenance": [
+          "Task[task_3]",
+          "Evidence[EVI-CONTEXT] -> USER_CONTEXT (grounded)"
+        ],
+        "uncertainty": null,
+        "metrics": {},
+        "patterns": []
+      }
+    ],
+    "validated_predictions": [],
+    "validated_prescriptions": [],
+    "validated_action_plan": null,
+    "execution_result": null,
+    "contradictions": [],
+    "unknowns": [],
+    "limitations": [],
+    "provenance": [
+      "Publisher Consolidated"
+    ],
+    "freeze_signature": "814f646c972a2b61e7417c266dcdee07bd0d9caa9116bf1210ba4400be4274ae"
+  },
+  "execution_plan": {
+    "steps": [
+      {
+        "step_id": "task_1",
+        "capability_id": "extract_relevant_information",
+        "target": "EM[SEMANTIC]",
+        "canonical_em": "EM Descriptor",
+        "required_inputs": [],
+        "inputs": {},
+        "outputs": {},
+        "status": "COMPLETED",
+        "waiting_reason": "",
+        "dependencies": [],
+        "expected_outputs": [
+          "Lista de estudios relevantes",
+          "Síntesis de hallazgos clave sobre productividad, comunicación, colaboración y bienestar",
+          "Identificación de factores que influyen en el desempeño"
+        ],
+        "execution_level": "COGNITIVE",
+        "return_to_core": true,
+        "started_at": "2026-09-01T13:46:59.778535",
+        "completed_at": "2026-09-01T13:47:05.071639",
+        "revision": 1,
+        "provenance": [
+          "Structurer routed task_1 to extract_relevant_information owned by EM Descriptor",
+          "EMDescriptor executed task task_1, generated 3 validated findings.",
+          "Work[WORK-DB6BCEE8] -> Step[task_1] -> Capability[extract_relevant_information] -> Target[EM[SEMANTIC]] -> EMDescriptor"
+        ],
+        "produces_result": false
+      },
+      {
+        "step_id": "task_2",
+        "capability_id": "extract_relevant_information",
+        "target": "EM[SEMANTIC]",
+        "canonical_em": "EM Descriptor",
+        "required_inputs": [],
+        "inputs": {},
+        "outputs": {},
+        "status": "COMPLETED",
+        "waiting_reason": "",
+        "dependencies": [
+          "task_1"
+        ],
+        "expected_outputs": [
+          "Comparación de desempeño entre modalidades",
+          "Análisis de diferencias y similitudes"
+        ],
+        "execution_level": "COGNITIVE",
+        "return_to_core": true,
+        "started_at": "2026-09-01T13:47:05.372776",
+        "completed_at": "2026-09-01T13:47:08.126483",
+        "revision": 1,
+        "provenance": [
+          "Structurer routed task_2 to extract_relevant_information owned by EM Descriptor",
+          "EMDescriptor executed task task_2, generated 1 validated findings.",
+          "Work[WORK-DB6BCEE8] -> Step[task_2] -> Capability[extract_relevant_information] -> Target[EM[SEMANTIC]] -> EMDescriptor"
+        ],
+        "produces_result": false
+      },
+      {
+        "step_id": "task_3",
+        "capability_id": "extract_relevant_information",
+        "target": "EM[SEMANTIC]",
+        "canonical_em": "EM Descriptor",
+        "required_inputs": [],
+        "inputs": {},
+        "outputs": {},
+        "status": "COMPLETED",
+        "waiting_reason": "",
+        "dependencies": [
+          "task_1"
+        ],
+        "expected_outputs": [
+          "Evaluación de la calidad de la evidencia",
+          "Identificación de limitaciones metodológicas"
+        ],
+        "execution_level": "COGNITIVE",
+        "return_to_core": true,
+        "started_at": "2026-09-01T13:47:08.427306",
+        "completed_at": "2026-09-01T13:47:13.660200",
+        "revision": 1,
+        "provenance": [
+          "Structurer routed task_3 to extract_relevant_information owned by EM Descriptor",
+          "EMDescriptor executed task task_3, generated 3 validated findings.",
+          "Work[WORK-DB6BCEE8] -> Step[task_3] -> Capability[extract_relevant_information] -> Target[EM[SEMANTIC]] -> EMDescriptor"
+        ],
+        "produces_result": false
+      },
+      {
+        "step_id": "task_4",
+        "capability_id": "generate_summary",
+        "target": "SUBSYSTEM[StoryEngine]",
+        "canonical_em": "EM Publisher",
+        "required_inputs": [],
+        "inputs": {},
+        "outputs": {},
+        "status": "COMPLETED",
+        "waiting_reason": "",
+        "dependencies": [
+          "task_2",
+          "task_3",
+          "task_1"
+        ],
+        "expected_outputs": [
+          "Resumen de hallazgos clave",
+          "Lista de incertidumbres y lagunas de conocimiento"
+        ],
+        "execution_level": "COGNITIVE",
+        "return_to_core": true,
+        "started_at": "2026-09-01T13:47:13.961085",
+        "completed_at": "2026-09-01T13:47:21.324919",
+        "revision": 1,
+        "provenance": [
+          "Structurer routed task_4 to generate_summary owned by EM Publisher",
+          "Work[WORK-DB6BCEE8] -> Step[task_4] -> Capability[generate_summary] -> Target[SUBSYSTEM[StoryEngine]] -> EMPublisher"
+        ],
+        "produces_result": true
+      }
+    ]
+  },
+  "em_pipeline": [],
+  "acfl": {
+    "weights": {
+      "cost": 50.0,
+      "risk": 50.0
+    },
+    "criteria": [],
+    "alternatives": [],
+    "normalized_scores": {},
+    "frontier": [],
+    "sensitivity": {}
+  },
+  "result": {
+    "result_id": "WR-fd715e",
+    "work_id": "WORK-DB6BCEE8",
+    "summary": "La evidencia actual sobre el desempeño de equipos remotos de software es fragmentada y no concluyente. Los estudios revisados indican que la comunicación mediada por tecnología puede reducir la riqueza informativa y aumentar la ambigüedad, afectando la coordinación. La confianza y la cohesión son factores críticos que requieren estrategias de gestión específicas. Las herramientas de colaboración y prácticas de gestión influyen en la productividad, pero su efectividad depende del contexto. No se encontraron comparaciones directas con equipos presenciales o híbridos, y la heterogeneidad metodológica limita la generalización.",
+    "findings": [
+      "La confianza y la cohesión del equipo son factores críticos para el desempeño de equipos remotos de software, y su desarrollo requiere estrategias específicas de gestión.",
+      "La evidencia disponible no permite una comparación directa entre equipos remotos, presenciales e híbridos en el contexto del desempeño de equipos de software, ya que los estudios incluidos se centran en equipos remotos sin grupos de control presenciales o híbridos.",
+      "La evidencia existente sobre el desempeño de equipos remotos de software es fragmentada y no concluyente, con hallazgos mixtos respecto a la productividad y la satisfacción.",
+      "1. La comunicación mediada por tecnología reduce la riqueza de la información y aumenta la ambigüedad, afectando la coordinación y el desempeño.\n2. La confianza y la cohesión del equipo son críticas para el desempeño, y su desarrollo requiere estrategias específicas de gestión.\n3. Las herramientas de colaboración y prácticas de gestión de proyectos influyen en la productividad, pero su efectividad depende del contexto y la adopción.\n4. No hay comparaciones directas entre equipos remotos, presenciales e híbridos en los estudios revisados.\n5. La literatura presenta heterogeneidad metodológica (métodos, tamaños de muestra, contextos) que dificulta la comparación.\n6. Limitaciones metodológicas comunes: estudios transversales y auto-reportes, que introducen sesgos y limitan la inferencia causal.\n7. La evidencia es fragmentada y no concluyente, con hallazgos mixtos sobre productividad y satisfacción."
+    ],
+    "calculations": {},
+    "recommendations": [
+      "Dado que el objetivo es resumir el estado de la evidencia y las incertidumbres, se recomienda:\n- Para investigadores: diseñar estudios longitudinales con grupos de control presenciales e híbridos para permitir comparaciones directas.\n- Para investigadores: utilizar medidas objetivas de desempeño además de auto-reportes para reducir sesgos.\n- Para profesionales: implementar estrategias deliberadas para construir confianza y cohesión en equipos remotos, como reuniones virtuales regulares y actividades de team-building.\n- Para profesionales: seleccionar herramientas de colaboración y prácticas de gestión adaptadas al contexto específico del equipo y la organización.\n- Para futuras revisiones: estandarizar definiciones y métricas de desempeño para facilitar la síntesis de evidencia."
+    ],
+    "alternatives": [],
+    "scores": {},
+    "evidence_ids": [],
+    "provenance": [
+      "EM Publisher Generated Result"
+    ],
+    "confidence": null,
+    "status": "AVAILABLE",
+    "limitations": [],
+    "gaps": []
+  },
+  "active_em": "EM Publisher",
+  "active_step_id": "task_4",
+  "active_capability": "generate_summary",
+  "execution_phase": "COMPLETED",
+  "waiting_reason": null,
+  "waiting_for_evidence_ids": [],
+  "execution_progress": 0.0,
+  "execution_events": [
+    {
+      "timestamp": "2026-09-01T13:46:59.778535",
+      "step_id": "task_1",
+      "canonical_em": "EM Descriptor",
+      "capability_id": "extract_relevant_information",
+      "event": "STEP_RUNNING",
+      "status": "RUNNING",
+      "message": "Starting capability: extract_relevant_information",
+      "provenance": []
+    },
+    {
+      "timestamp": "2026-09-01T13:47:05.071639",
+      "step_id": "task_1",
+      "canonical_em": "EM Descriptor",
+      "capability_id": "extract_relevant_information",
+      "event": "STEP_COMPLETED",
+      "status": "COMPLETED",
+      "message": "Capability extract_relevant_information yielded COMPLETED",
+      "provenance": [
+        "Structurer routed task_1 to extract_relevant_information owned by EM Descriptor",
+        "EMDescriptor executed task task_1, generated 3 validated findings.",
+        "Work[WORK-DB6BCEE8] -> Step[task_1] -> Capability[extract_relevant_information] -> Target[EM[SEMANTIC]] -> EMDescriptor"
+      ]
+    },
+    {
+      "timestamp": "2026-09-01T13:47:05.372776",
+      "step_id": "task_2",
+      "canonical_em": "EM Descriptor",
+      "capability_id": "extract_relevant_information",
+      "event": "STEP_RUNNING",
+      "status": "RUNNING",
+      "message": "Starting capability: extract_relevant_information",
+      "provenance": []
+    },
+    {
+      "timestamp": "2026-09-01T13:47:08.126483",
+      "step_id": "task_2",
+      "canonical_em": "EM Descriptor",
+      "capability_id": "extract_relevant_information",
+      "event": "STEP_COMPLETED",
+      "status": "COMPLETED",
+      "message": "Capability extract_relevant_information yielded COMPLETED",
+      "provenance": [
+        "Structurer routed task_2 to extract_relevant_information owned by EM Descriptor",
+        "EMDescriptor executed task task_2, generated 1 validated findings.",
+        "Work[WORK-DB6BCEE8] -> Step[task_2] -> Capability[extract_relevant_information] -> Target[EM[SEMANTIC]] -> EMDescriptor"
+      ]
+    },
+    {
+      "timestamp": "2026-09-01T13:47:08.427306",
+      "step_id": "task_3",
+      "canonical_em": "EM Descriptor",
+      "capability_id": "extract_relevant_information",
+      "event": "STEP_RUNNING",
+      "status": "RUNNING",
+      "message": "Starting capability: extract_relevant_information",
+      "provenance": []
+    },
+    {
+      "timestamp": "2026-09-01T13:47:13.660200",
+      "step_id": "task_3",
+      "canonical_em": "EM Descriptor",
+      "capability_id": "extract_relevant_information",
+      "event": "STEP_COMPLETED",
+      "status": "COMPLETED",
+      "message": "Capability extract_relevant_information yielded COMPLETED",
+      "provenance": [
+        "Structurer routed task_3 to extract_relevant_information owned by EM Descriptor",
+        "EMDescriptor executed task task_3, generated 3 validated findings.",
+        "Work[WORK-DB6BCEE8] -> Step[task_3] -> Capability[extract_relevant_information] -> Target[EM[SEMANTIC]] -> EMDescriptor"
+      ]
+    },
+    {
+      "timestamp": "2026-09-01T13:47:13.961085",
+      "step_id": "task_4",
+      "canonical_em": "EM Publisher",
+      "capability_id": "generate_summary",
+      "event": "STEP_RUNNING",
+      "status": "RUNNING",
+      "message": "Starting capability: generate_summary",
+      "provenance": []
+    },
+    {
+      "timestamp": "2026-09-01T13:47:21.324919",
+      "step_id": "task_4",
+      "canonical_em": "EM Publisher",
+      "capability_id": "generate_summary",
+      "event": "STEP_COMPLETED",
+      "status": "COMPLETED",
+      "message": "Capability generate_summary yielded COMPLETED",
+      "provenance": [
+        "Structurer routed task_4 to generate_summary owned by EM Publisher",
+        "Work[WORK-DB6BCEE8] -> Step[task_4] -> Capability[generate_summary] -> Target[SUBSYSTEM[StoryEngine]] -> EMPublisher"
+      ]
+    }
+  ],
+  "runtime_metadata": [
+    {
+      "call_id": "CALL-cdc1949a",
+      "em": "EM Core",
+      "capability_id": "propose_problem",
+      "model": "deepseek-chat",
+      "model_version": "",
+      "runtime_version": "5.x",
+      "context_id": "WORK-DB6BCEE8",
+      "prompt_version": "",
+      "inference_parameters": {},
+      "prompt_tokens": null,
+      "completion_tokens": null,
+      "total_tokens": null,
+      "latency_ms": null,
+      "output_schema": "ProblemModel",
+      "validation_status": "",
+      "timestamp": "2026-09-01T19:46:59.778535Z",
+      "status": "COMPLETED"
+    },
+    {
+      "call_id": "CALL-08ca02b8",
+      "em": "EM Descriptor",
+      "capability_id": "propose_findings",
+      "model": "deepseek-chat",
+      "model_version": "",
+      "runtime_version": "5.x",
+      "context_id": "WORK-DB6BCEE8",
+      "prompt_version": "",
+      "inference_parameters": {},
+      "prompt_tokens": null,
+      "completion_tokens": null,
+      "total_tokens": null,
+      "latency_ms": 4992.296934127808,
+      "output_schema": "DescriptorProposal",
+      "validation_status": "",
+      "timestamp": "2026-09-01T19:47:05.071639Z",
+      "status": "COMPLETED"
+    },
+    {
+      "call_id": "CALL-e43e1f2e",
+      "em": "EM Descriptor",
+      "capability_id": "propose_findings",
+      "model": "deepseek-chat",
+      "model_version": "",
+      "runtime_version": "5.x",
+      "context_id": "WORK-DB6BCEE8",
+      "prompt_version": "",
+      "inference_parameters": {},
+      "prompt_tokens": null,
+      "completion_tokens": null,
+      "total_tokens": null,
+      "latency_ms": 2453.2573223114014,
+      "output_schema": "DescriptorProposal",
+      "validation_status": "",
+      "timestamp": "2026-09-01T19:47:08.126483Z",
+      "status": "COMPLETED"
+    },
+    {
+      "call_id": "CALL-a4446889",
+      "em": "EM Descriptor",
+      "capability_id": "propose_findings",
+      "model": "deepseek-chat",
+      "model_version": "",
+      "runtime_version": "5.x",
+      "context_id": "WORK-DB6BCEE8",
+      "prompt_version": "",
+      "inference_parameters": {},
+      "prompt_tokens": null,
+      "completion_tokens": null,
+      "total_tokens": null,
+      "latency_ms": 4932.274103164673,
+      "output_schema": "DescriptorProposal",
+      "validation_status": "",
+      "timestamp": "2026-09-01T19:47:13.660200Z",
+      "status": "COMPLETED"
+    }
+  ],
+  "core_analysis": {
+    "analysis_id": "CORE-09916E",
+    "problem_type": "UNKNOWN",
+    "tasks": [
+      {
+        "task_id": "task_1",
+        "classification": "D",
+        "owner": "EM Descriptor",
+        "capability": "extract_relevant_information",
+        "dependencies": []
+      },
+      {
+        "task_id": "task_2",
+        "classification": "D",
+        "owner": "EM Descriptor",
+        "capability": "extract_relevant_information",
+        "dependencies": [
+          "task_1"
+        ]
+      },
+      {
+        "task_id": "task_3",
+        "classification": "D",
+        "owner": "EM Descriptor",
+        "capability": "extract_relevant_information",
+        "dependencies": [
+          "task_1"
+        ]
+      },
+      {
+        "task_id": "task_4",
+        "classification": "PUB",
+        "owner": "EM Publisher",
+        "capability": "generate_summary",
+        "dependencies": [
+          "task_2",
+          "task_3",
+          "task_1"
+        ]
+      }
+    ],
+    "routing": [
+      "task_1 -> EM Descriptor",
+      "task_2 -> EM Descriptor",
+      "task_3 -> EM Descriptor",
+      "task_4 -> EM Publisher"
+    ],
+    "integration": {
+      "final_em": "EM Publisher",
+      "result_source": "state.result (pending)"
+    },
+    "status": "READY"
+  },
+  "agent_deployment": null,
+  "resolved_pipeline": [
+    "extract_relevant_information",
+    "extract_relevant_information",
+    "extract_relevant_information",
+    "generate_summary"
+  ],
+  "gaps": [],
+  "conditions": [
+    {
+      "status": "INFORMATIONAL",
+      "reason_code": "EVIDENCE_OPTIONAL",
+      "message": "Optional evidence suggested: Identificación de factores que influyen en el desempeño (productividad, comunicación, colaboración, bienestar), Comparación con equipos presenciales o híbridos si está disponible, Revisión de literatura académica y estudios empíricos sobre desempeño de equipos remotos de software",
+      "target": null
+    }
+  ],
+  "status": "COMPLETED",
+  "information_request": null,
+  "human_requests": [],
+  "decision_points": [],
+  "human_contributions": [],
+  "human_decision": null,
+  "revision": 9,
+  "feasible_only": false,
+  "problem_state": "FORMULATED",
+  "knowledge_state": "INCOMPLETE",
+  "decision_state": "PENDING",
+  "narrative_state": "INITIALIZING",
+  "visualizations": [
+    {
+      "id": "Inspector",
+      "status": "AVAILABLE",
+      "data_source": null,
+      "dimensions": [],
+      "interactions": [],
+      "reason": null,
+      "selection_bindings": []
+    },
+    {
+      "id": "Story Canvas",
+      "status": "AVAILABLE",
+      "data_source": null,
+      "dimensions": [],
+      "interactions": [],
+      "reason": null,
+      "selection_bindings": []
+    }
+  ],
+  "tool_call_id": null,
+  "available_capabilities": [],
+  "state": {
+    "acfl": {
+      "weights": {
+        "cost": 50.0,
+        "risk": 50.0
+      },
+      "criteria": [],
+      "alternatives": [],
+      "normalized_scores": {},
+      "frontier": [],
+      "sensitivity": {}
+    },
+    "feasible_only": false,
+    "result": {
+      "result_id": "WR-fd715e",
+      "work_id": "WORK-DB6BCEE8",
+      "summary": "La evidencia actual sobre el desempeño de equipos remotos de software es fragmentada y no concluyente. Los estudios revisados indican que la comunicación mediada por tecnología puede reducir la riqueza informativa y aumentar la ambigüedad, afectando la coordinación. La confianza y la cohesión son factores críticos que requieren estrategias de gestión específicas. Las herramientas de colaboración y prácticas de gestión influyen en la productividad, pero su efectividad depende del contexto. No se encontraron comparaciones directas con equipos presenciales o híbridos, y la heterogeneidad metodológica limita la generalización.",
+      "findings": [
+        "La confianza y la cohesión del equipo son factores críticos para el desempeño de equipos remotos de software, y su desarrollo requiere estrategias específicas de gestión.",
+        "La evidencia disponible no permite una comparación directa entre equipos remotos, presenciales e híbridos en el contexto del desempeño de equipos de software, ya que los estudios incluidos se centran en equipos remotos sin grupos de control presenciales o híbridos.",
+        "La evidencia existente sobre el desempeño de equipos remotos de software es fragmentada y no concluyente, con hallazgos mixtos respecto a la productividad y la satisfacción.",
+        "1. La comunicación mediada por tecnología reduce la riqueza de la información y aumenta la ambigüedad, afectando la coordinación y el desempeño.\n2. La confianza y la cohesión del equipo son críticas para el desempeño, y su desarrollo requiere estrategias específicas de gestión.\n3. Las herramientas de colaboración y prácticas de gestión de proyectos influyen en la productividad, pero su efectividad depende del contexto y la adopción.\n4. No hay comparaciones directas entre equipos remotos, presenciales e híbridos en los estudios revisados.\n5. La literatura presenta heterogeneidad metodológica (métodos, tamaños de muestra, contextos) que dificulta la comparación.\n6. Limitaciones metodológicas comunes: estudios transversales y auto-reportes, que introducen sesgos y limitan la inferencia causal.\n7. La evidencia es fragmentada y no concluyente, con hallazgos mixtos sobre productividad y satisfacción."
+      ],
+      "calculations": {},
+      "recommendations": [
+        "Dado que el objetivo es resumir el estado de la evidencia y las incertidumbres, se recomienda:\n- Para investigadores: diseñar estudios longitudinales con grupos de control presenciales e híbridos para permitir comparaciones directas.\n- Para investigadores: utilizar medidas objetivas de desempeño además de auto-reportes para reducir sesgos.\n- Para profesionales: implementar estrategias deliberadas para construir confianza y cohesión en equipos remotos, como reuniones virtuales regulares y actividades de team-building.\n- Para profesionales: seleccionar herramientas de colaboración y prácticas de gestión adaptadas al contexto específico del equipo y la organización.\n- Para futuras revisiones: estandarizar definiciones y métricas de desempeño para facilitar la síntesis de evidencia."
+      ],
+      "alternatives": [],
+      "scores": {},
+      "evidence_ids": [],
+      "provenance": [
+        "EM Publisher Generated Result"
+      ],
+      "confidence": null,
+      "status": "AVAILABLE",
+      "limitations": [],
+      "gaps": []
+    }
+  },
+  "open_research": {
+    "status": "OPEN_INSUFFICIENT_INFORMATION",
+    "operation_kind": "OPEN_RESEARCH",
+    "is_open": true,
+    "decision_reached": false,
+    "decision_pending": true,
+    "items": [
+      {
+        "kind": "UNRESOLVED_QUESTION",
+        "label": "Calidad y heterogeneidad de los estudios existentes",
+        "source_ref": "problem.unknowns[0]",
+        "provenance": [
+          "problem.unknowns"
+        ]
+      },
+      {
+        "kind": "UNRESOLVED_QUESTION",
+        "label": "Definiciones operativas de 'desempeño' en los estudios",
+        "source_ref": "problem.unknowns[1]",
+        "provenance": [
+          "problem.unknowns"
+        ]
+      },
+      {
+        "kind": "UNCERTAINTY",
+        "label": "No se dispone de información sobre la calidad metodológica específica de cada estudio.",
+        "source_ref": "knowledge.uncertainty[0]",
+        "provenance": [
+          "knowledge.uncertainty"
+        ]
+      },
+      {
+        "kind": "UNCERTAINTY",
+        "label": "La falta de datos primarios impide cuantificar la magnitud de los efectos.",
+        "source_ref": "knowledge.uncertainty[1]",
+        "provenance": [
+          "knowledge.uncertainty"
+        ]
+      },
+      {
+        "kind": "LIMITATION",
+        "label": "La síntesis se basa únicamente en evidencia secundaria, sin acceso a datos primarios.",
+        "source_ref": "knowledge.limitations[0]",
+        "provenance": [
+          "knowledge.limitations"
+        ]
+      },
+      {
+        "kind": "LIMITATION",
+        "label": "No se especifican criterios de inclusión/exclusión de los estudios revisados.",
+        "source_ref": "knowledge.limitations[1]",
+        "provenance": [
+          "knowledge.limitations"
+        ]
+      },
+      {
+        "kind": "LIMITATION",
+        "label": "La heterogeneidad de los estudios impide realizar un meta-análisis cuantitativo.",
+        "source_ref": "knowledge.limitations[2]",
+        "provenance": [
+          "knowledge.limitations"
+        ]
+      },
+      {
+        "kind": "INSUFFICIENT_INFORMATION",
+        "label": "Knowledge state is INCOMPLETE — not enough to conclude.",
+        "source_ref": "knowledge_state",
+        "provenance": []
+      },
+      {
+        "kind": "DATA_NOT_AVAILABLE",
+        "label": "No predictive knowledge was produced.",
+        "source_ref": "predictive_knowledge.status",
+        "provenance": []
+      },
+      {
+        "kind": "PENDING_HUMAN_DECISION",
+        "label": "No human decision yet — this operation is still OPEN.",
+        "source_ref": "human_decision",
+        "provenance": []
+      }
+    ],
+    "decision_relevant_knowledge": [
+      "FND-32CC5CE3",
+      "FND-DE811C31",
+      "FND-BAAF22D1",
+      "FND-9E963F99",
+      "FND-B9D5B480",
+      "FND-B624DB0E",
+      "FND-8F8AACDF"
+    ],
+    "summary": "Operation is open - no human decision has been reached. 10 open item(s) remain.",
+    "provenance": [
+      "LS90 Python-derived open-research projection",
+      "governed read-only view; no LLM output, no decision authority, no re-router of execution"
+    ],
+    "built": "2026-09-01T13:47:21.927371"
+  }
+}

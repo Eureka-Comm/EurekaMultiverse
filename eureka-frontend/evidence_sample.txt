@@ -1,0 +1,13 @@
+Evidence Sample
+
+Provider A:
+Cost: 100
+Risk: Low
+
+Provider B:
+Cost: 80
+Risk: Medium
+
+Provider C:
+Cost: 120
+Risk: Low

@@ -1,0 +1,129 @@
+/* ============================================================================
+   EUREKA — COGNITIVE OPERATION MAP (LS94 · PRIMARY comprehension surface)
+   ----------------------------------------------------------------------------
+   ONE screen, no scroll, no Inspector, no legend. Six DISTINCT visual primitives
+   on a single horizontal cognitive axis (origin → destination). This is a
+   scientific-instrument surface, not a card grid: thin hairlines, mono ids,
+   registration frame, and a dominant closed terminal for the RESULT.
+   ========================================================================== */
+
+.opmap-root {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  height: clamp(500px, 62vh, 560px);
+  background:
+    linear-gradient(to right, var(--eureka-spatial-grid) 1px, transparent 1px),
+    linear-gradient(to bottom, var(--eureka-spatial-grid) 1px, transparent 1px),
+    var(--eureka-surface);
+  background-size: 26px 26px, 26px 26px, auto;
+  border: 1px solid var(--eureka-spatial-hairline);
+  overflow: hidden;
+}
+
+/* registration crosshairs at the panel corners (instrument feel) */
+.opmap-root::before,
+.opmap-root::after {
+  content: "";
+  position: absolute;
+  width: 12px;
+  height: 12px;
+  pointer-events: none;
+  opacity: 0.5;
+  z-index: 3;
+  background:
+    linear-gradient(var(--eureka-text-technical), var(--eureka-text-technical)) center / 1px 100% no-repeat,
+    linear-gradient(var(--eureka-text-technical), var(--eureka-text-technical)) center / 100% 1px no-repeat;
+}
+.opmap-root::before { top: 6px; left: 6px; }
+.opmap-root::after { bottom: 6px; right: 6px; }
+
+.opmap-hud {
+  position: absolute;
+  top: 10px;
+  left: 16px;
+  z-index: 4;
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+  flex-wrap: wrap;
+  pointer-events: none;
+  max-width: calc(100% - 32px);
+}
+.opmap-hud-title {
+  font-family: var(--font-display);
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--eureka-text-display);
+}
+.opmap-hud-sub {
+  font-family: var(--font-mono);
+  font-size: 8.5px;
+  color: var(--eureka-text-micro);
+}
+.opmap-hud-hint {
+  font-family: var(--font-mono);
+  font-size: 8px;
+  color: var(--eureka-text-label);
+  letter-spacing: 0.04em;
+}
+
+.opmap-canvas {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.opmap-canvas svg {
+  display: block;
+  height: 100%;
+  width: 100%;
+}
+
+/* the geometry layer is always visible; labels can be hidden for §39 */
+.opmap-geometry {
+  opacity: 1;
+}
+
+/* screen-reader accessible summary (never the only semantic source) */
+.opmap-sr {
+  position: absolute;
+  bottom: 10px;
+  left: 16px;
+  right: 16px;
+  z-index: 4;
+  font-family: var(--font-mono);
+  font-size: 8.5px;
+  color: var(--eureka-text-label);
+  line-height: 1.5;
+  pointer-events: none;
+}
+.opmap-sr strong { color: var(--eureka-text-display); }
+
+/* ---- labels-hidden policy (§39): hide every textual label --------------- */
+.opmap-root[data-opmap-labels="off"] .opmap-label {
+  opacity: 0 !important;
+}
+.opmap-root[data-opmap-labels="off"] .opmap-sr {
+  opacity: 0 !important;
+}
+.opmap-root[data-opmap-labels="off"] .opmap-hud {
+  opacity: 0 !important;
+}
+/* in bare mode hide everything textual but keep geometry + state glyphs */
+.opmap-root[data-opmap-bare="1"] .opmap-label {
+  opacity: 0 !important;
+}
+.opmap-root[data-opmap-bare="1"] .opmap-hud,
+.opmap-root[data-opmap-bare="1"] .opmap-sr {
+  display: none !important;
+}
+
+/* subtle hover affordance on interactive nodes */
+.opmap-geometry g[style*="pointer"] rect,
+.opmap-geometry g[style*="pointer"] circle {
+  transition: stroke-width 0.14s ease;
+}

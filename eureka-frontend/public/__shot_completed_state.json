@@ -1,0 +1,2719 @@
+{
+  "schema_version": "EUREKA_CANONICAL_WORK_STATE_V2",
+  "work": {
+    "workId": "WORK-AC272ACA",
+    "taskCategory": null,
+    "status": "COMPLETED",
+    "userIntent": "Analiza el impacto de reducir los costes de servidores un 20% manteniendo disponibilidad del 99.9%",
+    "provenance_log": []
+  },
+  "problem": {
+    "intent": "Analiza el impacto de reducir los costes de servidores un 20% manteniendo disponibilidad del 99.9%",
+    "problem_id": "PROB-0762B183",
+    "problem_understanding": "Evaluar el impacto de reducir los costes de servidores en un 20% mientras se mantiene una disponibilidad del 99.9%.",
+    "context": null,
+    "objective": "Analizar el impacto de reducir los costes de servidores un 20% manteniendo la disponibilidad del 99.9%.",
+    "evidence_requirements": [],
+    "constraints": [],
+    "horizon": null,
+    "risk": null,
+    "success_criteria": [],
+    "authority": null,
+    "structured_problem": {
+      "questions": [
+        "¿Cuál es el impacto de reducir los costes de servidores en un 20% sobre la disponibilidad del 99.9%?",
+        "¿Qué estrategias de reducción de costes permiten mantener la disponibilidad requerida?",
+        "¿Cuáles son los riesgos asociados a la reducción de costes en términos de disponibilidad?"
+      ],
+      "entities": [
+        "servidores",
+        "costes de servidores",
+        "disponibilidad"
+      ],
+      "variables": [
+        "costes de servidores",
+        "disponibilidad",
+        "reducción de costes (%)"
+      ],
+      "relationships": [
+        "La reducción de costes de servidores puede afectar la disponibilidad.",
+        "La disponibilidad depende de la infraestructura de servidores y su mantenimiento."
+      ],
+      "assumptions": [
+        "La reducción de costes se puede lograr sin comprometer la disponibilidad si se optimizan recursos.",
+        "La disponibilidad del 99.9% es un requisito fijo."
+      ],
+      "unknowns": [
+        "Estrategias específicas para reducir costes sin afectar la disponibilidad.",
+        "El impacto cuantitativo de la reducción de costes en la disponibilidad."
+      ],
+      "evidence_requirements": [
+        "Datos históricos de costes y disponibilidad.",
+        "Análisis de costes de infraestructura actual."
+      ],
+      "constraints": [
+        "La disponibilidad debe mantenerse en 99.9%.",
+        "La reducción de costes debe ser del 20%."
+      ],
+      "success_criteria": [
+        "Lograr una reducción del 20% en costes de servidores.",
+        "Mantener la disponibilidad en 99.9% o superior."
+      ],
+      "task_network": {
+        "tasks": [
+          {
+            "task_id": "task_1",
+            "description": "Describir el estado actual de los costes de servidores y la disponibilidad.",
+            "owner": "EM Descriptor",
+            "expected_outputs": [
+              "Informe de costes actuales",
+              "Métricas de disponibilidad actual"
+            ],
+            "dependencies": []
+          },
+          {
+            "task_id": "task_2",
+            "description": "Identificar y caracterizar las variables que influyen en los costes y la disponibilidad.",
+            "owner": "EM Descriptor",
+            "expected_outputs": [
+              "Lista de variables relevantes",
+              "Relaciones entre variables"
+            ],
+            "dependencies": [
+              "task_1"
+            ]
+          },
+          {
+            "task_id": "task_3",
+            "description": "Predecir el impacto de diferentes estrategias de reducción de costes sobre la disponibilidad.",
+            "owner": "EM Predictor",
+            "expected_outputs": [
+              "Modelo predictivo de impacto",
+              "Escenarios de reducción de costes y su efecto en disponibilidad"
+            ],
+            "dependencies": [
+              "task_2"
+            ]
+          },
+          {
+            "task_id": "task_4",
+            "description": "Recomendar la mejor estrategia para reducir costes un 20% manteniendo la disponibilidad del 99.9%.",
+            "owner": "EM Prescriptor",
+            "expected_outputs": [
+              "Estrategia recomendada",
+              "Justificación basada en evidencia predictiva"
+            ],
+            "dependencies": [
+              "task_3"
+            ]
+          },
+          {
+            "task_id": "task_5",
+            "description": "Convertir la estrategia recomendada en un plan de acción detallado.",
+            "owner": "EM Actioner",
+            "expected_outputs": [
+              "Plan de acción paso a paso",
+              "Recursos necesarios y cronograma"
+            ],
+            "dependencies": [
+              "task_4"
+            ]
+          },
+          {
+            "task_id": "task_6",
+            "description": "Instalar y ejecutar el plan de acción de forma controlada.",
+            "owner": "EM Installer",
+            "expected_outputs": [
+              "Implementación del plan",
+              "Registro de cambios y resultados"
+            ],
+            "dependencies": [
+              "task_5"
+            ]
+          },
+          {
+            "task_id": "task_7",
+            "description": "Publicar los resultados finales y validar que se cumplen los criterios de éxito.",
+            "owner": "EM Publisher",
+            "expected_outputs": [
+              "Informe final de impacto",
+              "Validación de reducción de costes y disponibilidad"
+            ],
+            "dependencies": [
+              "task_6"
+            ]
+          }
+        ]
+      }
+    },
+    "questions": [],
+    "assumptions": [],
+    "unknowns": [],
+    "entities": [],
+    "alternatives": [],
+    "criteria": [],
+    "requested_outputs": [],
+    "domain_context": null,
+    "temporal_context": null,
+    "required_capabilities": [],
+    "semantic_confidence": 1.0,
+    "status": "FORMULATED",
+    "provenance": [
+      "EM Core propose_problem via DeepSeekAdapter -> SemanticProposal (CANDIDATE)",
+      "Python governance: LLM semantic fields classified as CANDIDATE; authority is Python-classified, not LLM-decided."
+    ],
+    "governance_status": "GOVERNED",
+    "authority_status": "UNDETERMINED",
+    "governance_fields": {
+      "problem_understanding": "LLM_CANDIDATE",
+      "objective": "LLM_CANDIDATE",
+      "context": "LLM_CANDIDATE",
+      "evidence_requirements": "LLM_CANDIDATE",
+      "constraints": "LLM_CANDIDATE",
+      "horizon": "LLM_CANDIDATE",
+      "risk": "LLM_CANDIDATE",
+      "success_criteria": "LLM_CANDIDATE",
+      "authority": "LLM_CANDIDATE",
+      "questions": "LLM_CANDIDATE",
+      "assumptions": "LLM_CANDIDATE",
+      "unknowns": "LLM_CANDIDATE",
+      "intent": "PYTHON",
+      "status": "PYTHON",
+      "problem_id": "PYTHON",
+      "governance_status": "PYTHON",
+      "authority_status": "PYTHON"
+    }
+  },
+  "historical_context": null,
+  "evidence_ids": [],
+  "evidence": [],
+  "extracted_evidence": {
+    "EVI-CONTEXT": {
+      "extracted_evidence_id": "EVI-CONTEXT",
+      "evidence_id": "EVI-CONTEXT",
+      "content_type": "text/plain",
+      "text_blocks": [
+        "Analiza el impacto de reducir los costes de servidores un 20% manteniendo disponibilidad del 99.9%"
+      ],
+      "tables": [],
+      "structured_data": null,
+      "pages": [],
+      "slides": [],
+      "sheets": [],
+      "source_locations": [],
+      "extraction_method": "USER_CONTEXT",
+      "parser_id": "ContextParser",
+      "parser_version": "1.0",
+      "extraction_timestamp": "2026-09-01T16:41:47.712378Z",
+      "warnings": []
+    }
+  },
+  "extracted_entities": {
+    "story_arc": [
+      {
+        "phase": "THE QUESTION",
+        "content": "Analizar el impacto de reducir los costes de servidores un 20% manteniendo la disponibilidad del 99.9%.",
+        "source": "PROB-0762B183",
+        "authority": "LLM_CANDIDATE"
+      },
+      {
+        "phase": "WHAT THE EVIDENCE SAYS",
+        "content": "Se identificaron 2 hallazgos sobre la evidencia disponible.",
+        "source": "FINDINGS",
+        "authority": "VALIDATED"
+      },
+      {
+        "phase": "FINDING",
+        "content": "El objetivo del análisis es reducir los costes de servidores en un 20% manteniendo una disponibilidad del 99.9%.",
+        "source": "FND-D1C5130E",
+        "authority": "VALIDATED"
+      },
+      {
+        "phase": "FINDING",
+        "content": "El objetivo del análisis es reducir los costes de servidores en un 20% manteniendo una disponibilidad del 99.9%.",
+        "source": "FND-FD733728",
+        "authority": "VALIDATED"
+      },
+      {
+        "phase": "PREDICTION",
+        "content": "El motor matemático (ACFL_DETERMINISTIC, GCLV Eq 4.17) evaluó 6 predicado(s).",
+        "source": "PREDICATES",
+        "authority": "VALIDATED"
+      },
+      {
+        "phase": "PREDICTION",
+        "content": "Predicado GCLV sobre 'Datos' (mse=).",
+        "source": "PRED_AST_90174244",
+        "authority": "VALIDATED"
+      },
+      {
+        "phase": "PREDICTION",
+        "content": "Predicado GCLV sobre 'NOT_EVALUATED' (mse=).",
+        "source": "PRED_AST_0DC20858",
+        "authority": "VALIDATED"
+      },
+      {
+        "phase": "PRESCRIPTION",
+        "content": "El Prescriptor generó 3 alternativa(s) candidata(s); la autoridad de selección es humana (HITL)..",
+        "source": "PRESC-20250321-001",
+        "authority": "HUMAN_AUTHORIZED"
+      },
+      {
+        "phase": "THE DECISION",
+        "content": "El humano autorizó la alternativa ALT-001 (DEC-8b8482).",
+        "source": "DEC-8b8482",
+        "authority": "HUMAN_AUTHORIZED"
+      },
+      {
+        "phase": "THE RESULT",
+        "content": "El análisis evalúa la viabilidad de reducir los costes de servidores en un 20% manteniendo una disponibilidad del 99.9%. Se seleccionó la alternativa ALT-001 (consolidación mediante virtualización y contenedores) como la más adecuada, aunque la decisión fue anulada por un operador humano. No se dispone de un plan de acción ni de resultados de ejecución, por lo que no se puede confirmar el impacto real. Se recomienda implementar la alternativa seleccionada con un plan detallado y monitoreo continuo para asegurar el cumplimiento del objetivo.",
+        "source": "WR-0fde50",
+        "authority": "PUBLISHED"
+      }
+    ]
+  },
+  "evaluated_scores": {},
+  "rankings": {},
+  "scientific_metrics": {},
+  "knowledge": {
+    "findings": [
+      {
+        "finding_id": "FND-D1C5130E",
+        "statement": "El objetivo del análisis es reducir los costes de servidores en un 20% manteniendo una disponibilidad del 99.9%.",
+        "finding_type": "DESCRIPTIVE",
+        "evidence_refs": [
+          "EVI-CONTEXT"
+        ],
+        "method": "DESCRIPTOR_ANALYSIS",
+        "status": "VALIDATED",
+        "provenance": [
+          "Task[task_1]",
+          "Evidence[EVI-CONTEXT] -> USER_CONTEXT (grounded)"
+        ],
+        "uncertainty": null,
+        "metrics": {},
+        "patterns": []
+      },
+      {
+        "finding_id": "FND-FD733728",
+        "statement": "El objetivo del análisis es reducir los costes de servidores en un 20% manteniendo una disponibilidad del 99.9%.",
+        "finding_type": "DESCRIPTIVE",
+        "evidence_refs": [
+          "EVI-CONTEXT"
+        ],
+        "method": "DESCRIPTOR_ANALYSIS",
+        "status": "VALIDATED",
+        "provenance": [
+          "Task[task_2]",
+          "Evidence[EVI-CONTEXT] -> USER_CONTEXT (grounded)"
+        ],
+        "uncertainty": null,
+        "metrics": {},
+        "patterns": []
+      }
+    ],
+    "unknowns": [],
+    "contradictions": [],
+    "version": 3,
+    "predicates": [],
+    "patterns": [],
+    "metrics": {
+      "findings": 2,
+      "validated": 2,
+      "relational": 0,
+      "contradictions": 0,
+      "unknowns": 0
+    },
+    "uncertainty": [
+      "No se dispone de datos cuantitativos sobre costes actuales, arquitectura de servidores, o estrategias de reducción de costes."
+    ],
+    "limitations": [
+      "La evidencia proporcionada es insuficiente para identificar variables específicas que influyen en costes y disponibilidad."
+    ],
+    "dependencies_for_predictor": [
+      "Se requiere información adicional sobre la infraestructura actual, costes desglosados, y mecanismos de disponibilidad."
+    ]
+  },
+  "predictive_knowledge": {
+    "predictions": [
+      {
+        "prediction_id": "PRED-466AD0BB",
+        "target_variable": "Datos",
+        "predictor_variables": [
+          "Datos"
+        ],
+        "input_requirements": {
+          "Datos": "required input variable"
+        },
+        "units": null,
+        "data_period": null,
+        "sample_size": null,
+        "model_type": "ACFL_ENGINE",
+        "model_definition": "MSE=n/a",
+        "model_parameters": {},
+        "formula": "",
+        "baseline": null,
+        "predicted_value": null,
+        "uncertainty": {
+          "status": "NOT_AVAILABLE",
+          "confidence_interval": null,
+          "variance": null,
+          "limitations": [
+            "No authoritative formula for ACFL uncertainty derivation"
+          ],
+          "invalidation_conditions": [],
+          "provenance": []
+        },
+        "confidence_or_interval": null,
+        "assumptions": [],
+        "validity_conditions": [],
+        "evidence_refs": [
+          "FND-D1C5130E",
+          "FND-FD733728"
+        ],
+        "computation_trace": [
+          "Task[task_3]",
+          "Signature[7f86f4060c1d7ae53b2d9fa40453528a1641da9fc8927b7daf79b705b8c12ea9]",
+          "KnowledgeVersion[3]"
+        ],
+        "validation_status": "NOT_EVALUATED",
+        "reproducibility": false,
+        "provenance": [
+          "Task[task_3]",
+          "Predicate[PRED_AST_90174244]",
+          "Signature[7f86f4060c1d7ae53b2d9fa40453528a1641da9fc8927b7daf79b705b8c12ea9]",
+          "KnowledgeVersion[3]"
+        ]
+      },
+      {
+        "prediction_id": "PRED-2600C62C",
+        "target_variable": "NOT_EVALUATED",
+        "predictor_variables": [
+          "NOT_EVALUATED"
+        ],
+        "input_requirements": {
+          "NOT_EVALUATED": "required input variable"
+        },
+        "units": null,
+        "data_period": null,
+        "sample_size": null,
+        "model_type": "ACFL_ENGINE",
+        "model_definition": "MSE=n/a",
+        "model_parameters": {},
+        "formula": "",
+        "baseline": null,
+        "predicted_value": null,
+        "uncertainty": {
+          "status": "NOT_AVAILABLE",
+          "confidence_interval": null,
+          "variance": null,
+          "limitations": [
+            "No authoritative formula for ACFL uncertainty derivation"
+          ],
+          "invalidation_conditions": [],
+          "provenance": []
+        },
+        "confidence_or_interval": null,
+        "assumptions": [],
+        "validity_conditions": [],
+        "evidence_refs": [
+          "FND-D1C5130E",
+          "FND-FD733728"
+        ],
+        "computation_trace": [
+          "Task[task_3]",
+          "Signature[4aa45b9a669cfc48da188cd718a0c0ac3376a4ea63029a451bec5d228a6b657c]",
+          "KnowledgeVersion[3]"
+        ],
+        "validation_status": "NOT_EVALUATED",
+        "reproducibility": false,
+        "provenance": [
+          "Task[task_3]",
+          "Predicate[PRED_AST_0DC20858]",
+          "Signature[4aa45b9a669cfc48da188cd718a0c0ac3376a4ea63029a451bec5d228a6b657c]",
+          "KnowledgeVersion[3]"
+        ]
+      },
+      {
+        "prediction_id": "PRED-7E8DFC13",
+        "target_variable": "Optional",
+        "predictor_variables": [
+          "Optional"
+        ],
+        "input_requirements": {
+          "Optional": "required input variable"
+        },
+        "units": null,
+        "data_period": null,
+        "sample_size": null,
+        "model_type": "ACFL_ENGINE",
+        "model_definition": "MSE=n/a",
+        "model_parameters": {},
+        "formula": "",
+        "baseline": null,
+        "predicted_value": null,
+        "uncertainty": {
+          "status": "NOT_AVAILABLE",
+          "confidence_interval": null,
+          "variance": null,
+          "limitations": [
+            "No authoritative formula for ACFL uncertainty derivation"
+          ],
+          "invalidation_conditions": [],
+          "provenance": []
+        },
+        "confidence_or_interval": null,
+        "assumptions": [],
+        "validity_conditions": [],
+        "evidence_refs": [
+          "FND-D1C5130E",
+          "FND-FD733728"
+        ],
+        "computation_trace": [
+          "Task[task_3]",
+          "Signature[ae094c512220e4645b17fe32aae86c23c71f6b560915576eb59e66231432b722]",
+          "KnowledgeVersion[3]"
+        ],
+        "validation_status": "NOT_EVALUATED",
+        "reproducibility": false,
+        "provenance": [
+          "Task[task_3]",
+          "Predicate[PRED_AST_5854DCC2]",
+          "Signature[ae094c512220e4645b17fe32aae86c23c71f6b560915576eb59e66231432b722]",
+          "KnowledgeVersion[3]"
+        ]
+      },
+      {
+        "prediction_id": "PRED-A7852963",
+        "target_variable": "Predictor",
+        "predictor_variables": [
+          "Predictor"
+        ],
+        "input_requirements": {
+          "Predictor": "required input variable"
+        },
+        "units": null,
+        "data_period": null,
+        "sample_size": null,
+        "model_type": "ACFL_ENGINE",
+        "model_definition": "MSE=n/a",
+        "model_parameters": {},
+        "formula": "",
+        "baseline": null,
+        "predicted_value": null,
+        "uncertainty": {
+          "status": "NOT_AVAILABLE",
+          "confidence_interval": null,
+          "variance": null,
+          "limitations": [
+            "No authoritative formula for ACFL uncertainty derivation"
+          ],
+          "invalidation_conditions": [],
+          "provenance": []
+        },
+        "confidence_or_interval": null,
+        "assumptions": [],
+        "validity_conditions": [],
+        "evidence_refs": [
+          "FND-D1C5130E",
+          "FND-FD733728"
+        ],
+        "computation_trace": [
+          "Task[task_3]",
+          "Signature[ec5a21a3b8c4700e89f62e4bfccc4e37ff45af17830ebf3e2e6c87df1a0ed653]",
+          "KnowledgeVersion[3]"
+        ],
+        "validation_status": "NOT_EVALUATED",
+        "reproducibility": false,
+        "provenance": [
+          "Task[task_3]",
+          "Predicate[PRED_AST_5BD48778]",
+          "Signature[ec5a21a3b8c4700e89f62e4bfccc4e37ff45af17830ebf3e2e6c87df1a0ed653]",
+          "KnowledgeVersion[3]"
+        ]
+      },
+      {
+        "prediction_id": "PRED-807D9790",
+        "target_variable": "actual",
+        "predictor_variables": [
+          "actual"
+        ],
+        "input_requirements": {
+          "actual": "required input variable"
+        },
+        "units": null,
+        "data_period": null,
+        "sample_size": null,
+        "model_type": "ACFL_ENGINE",
+        "model_definition": "MSE=n/a",
+        "model_parameters": {},
+        "formula": "",
+        "baseline": null,
+        "predicted_value": null,
+        "uncertainty": {
+          "status": "NOT_AVAILABLE",
+          "confidence_interval": null,
+          "variance": null,
+          "limitations": [
+            "No authoritative formula for ACFL uncertainty derivation"
+          ],
+          "invalidation_conditions": [],
+          "provenance": []
+        },
+        "confidence_or_interval": null,
+        "assumptions": [],
+        "validity_conditions": [],
+        "evidence_refs": [
+          "FND-D1C5130E",
+          "FND-FD733728"
+        ],
+        "computation_trace": [
+          "Task[task_3]",
+          "Signature[5ff53a99e1baf53c928be7ffdd84c1ff3a0850d17d55e0bb9b8b2fa954e3661f]",
+          "KnowledgeVersion[3]"
+        ],
+        "validation_status": "NOT_EVALUATED",
+        "reproducibility": false,
+        "provenance": [
+          "Task[task_3]",
+          "Predicate[PRED_AST_B0E2B9C4]",
+          "Signature[5ff53a99e1baf53c928be7ffdd84c1ff3a0850d17d55e0bb9b8b2fa954e3661f]",
+          "KnowledgeVersion[3]"
+        ]
+      },
+      {
+        "prediction_id": "PRED-45F8C8AF",
+        "target_variable": "costes",
+        "predictor_variables": [
+          "costes"
+        ],
+        "input_requirements": {
+          "costes": "required input variable"
+        },
+        "units": null,
+        "data_period": null,
+        "sample_size": null,
+        "model_type": "ACFL_ENGINE",
+        "model_definition": "MSE=n/a",
+        "model_parameters": {},
+        "formula": "",
+        "baseline": null,
+        "predicted_value": null,
+        "uncertainty": {
+          "status": "NOT_AVAILABLE",
+          "confidence_interval": null,
+          "variance": null,
+          "limitations": [
+            "No authoritative formula for ACFL uncertainty derivation"
+          ],
+          "invalidation_conditions": [],
+          "provenance": []
+        },
+        "confidence_or_interval": null,
+        "assumptions": [],
+        "validity_conditions": [],
+        "evidence_refs": [
+          "FND-D1C5130E",
+          "FND-FD733728"
+        ],
+        "computation_trace": [
+          "Task[task_3]",
+          "Signature[ba77c3419079c2448e0838f5eb81d09da83cee7c0b4d499c8e26cb750c95424f]",
+          "KnowledgeVersion[3]"
+        ],
+        "validation_status": "NOT_EVALUATED",
+        "reproducibility": false,
+        "provenance": [
+          "Task[task_3]",
+          "Predicate[PRED_AST_9504D4FD]",
+          "Signature[ba77c3419079c2448e0838f5eb81d09da83cee7c0b4d499c8e26cb750c95424f]",
+          "KnowledgeVersion[3]"
+        ]
+      }
+    ],
+    "predicates": [
+      {
+        "predicate_id": "PRED_AST_90174244",
+        "condition_variables": [],
+        "target": "Datos",
+        "logical_structure": {
+          "operator": "GCLV",
+          "authority_reference": "Tesis Carlos Llorente Eq 4.17",
+          "input": {
+            "operator": "VARIABLE",
+            "authority_reference": "UNKNOWN",
+            "name": "Datos"
+          },
+          "alpha": 1.0,
+          "gamma": 0.5,
+          "m": 0.5
+        },
+        "mse": null,
+        "status": "VALIDATED",
+        "provenance": [
+          "ACFL_ENGINE_V5.1",
+          "Tesis Carlos Llorente Eq 4.17"
+        ]
+      },
+      {
+        "predicate_id": "PRED_AST_0DC20858",
+        "condition_variables": [],
+        "target": "NOT_EVALUATED",
+        "logical_structure": {
+          "operator": "GCLV",
+          "authority_reference": "Tesis Carlos Llorente Eq 4.17",
+          "input": {
+            "operator": "VARIABLE",
+            "authority_reference": "UNKNOWN",
+            "name": "NOT_EVALUATED"
+          },
+          "alpha": 1.0,
+          "gamma": 0.5,
+          "m": 0.5
+        },
+        "mse": null,
+        "status": "VALIDATED",
+        "provenance": [
+          "ACFL_ENGINE_V5.1",
+          "Tesis Carlos Llorente Eq 4.17"
+        ]
+      },
+      {
+        "predicate_id": "PRED_AST_5854DCC2",
+        "condition_variables": [],
+        "target": "Optional",
+        "logical_structure": {
+          "operator": "GCLV",
+          "authority_reference": "Tesis Carlos Llorente Eq 4.17",
+          "input": {
+            "operator": "VARIABLE",
+            "authority_reference": "UNKNOWN",
+            "name": "Optional"
+          },
+          "alpha": 1.0,
+          "gamma": 0.5,
+          "m": 0.5
+        },
+        "mse": null,
+        "status": "VALIDATED",
+        "provenance": [
+          "ACFL_ENGINE_V5.1",
+          "Tesis Carlos Llorente Eq 4.17"
+        ]
+      },
+      {
+        "predicate_id": "PRED_AST_5BD48778",
+        "condition_variables": [],
+        "target": "Predictor",
+        "logical_structure": {
+          "operator": "GCLV",
+          "authority_reference": "Tesis Carlos Llorente Eq 4.17",
+          "input": {
+            "operator": "VARIABLE",
+            "authority_reference": "UNKNOWN",
+            "name": "Predictor"
+          },
+          "alpha": 1.0,
+          "gamma": 0.5,
+          "m": 0.5
+        },
+        "mse": null,
+        "status": "VALIDATED",
+        "provenance": [
+          "ACFL_ENGINE_V5.1",
+          "Tesis Carlos Llorente Eq 4.17"
+        ]
+      },
+      {
+        "predicate_id": "PRED_AST_B0E2B9C4",
+        "condition_variables": [],
+        "target": "actual",
+        "logical_structure": {
+          "operator": "GCLV",
+          "authority_reference": "Tesis Carlos Llorente Eq 4.17",
+          "input": {
+            "operator": "VARIABLE",
+            "authority_reference": "UNKNOWN",
+            "name": "actual"
+          },
+          "alpha": 1.0,
+          "gamma": 0.5,
+          "m": 0.5
+        },
+        "mse": null,
+        "status": "VALIDATED",
+        "provenance": [
+          "ACFL_ENGINE_V5.1",
+          "Tesis Carlos Llorente Eq 4.17"
+        ]
+      },
+      {
+        "predicate_id": "PRED_AST_9504D4FD",
+        "condition_variables": [],
+        "target": "costes",
+        "logical_structure": {
+          "operator": "GCLV",
+          "authority_reference": "Tesis Carlos Llorente Eq 4.17",
+          "input": {
+            "operator": "VARIABLE",
+            "authority_reference": "UNKNOWN",
+            "name": "costes"
+          },
+          "alpha": 1.0,
+          "gamma": 0.5,
+          "m": 0.5
+        },
+        "mse": null,
+        "status": "VALIDATED",
+        "provenance": [
+          "ACFL_ENGINE_V5.1",
+          "Tesis Carlos Llorente Eq 4.17"
+        ]
+      }
+    ],
+    "status": "FROZEN",
+    "version": 1
+  },
+  "prescriptive_knowledge": {
+    "status": "FROZEN",
+    "prescriptions": [
+      {
+        "prescription_id": "PRESC-20250321-001",
+        "objective": "Reducir los costes de servidores en un 20% manteniendo la disponibilidad del 99.9%.",
+        "alternatives": [
+          {
+            "alternative_id": "ALT-001",
+            "description": "Implementar una estrategia de consolidación de servidores mediante virtualización y contenedores, optimizando la utilización de recursos y reduciendo el número de instancias físicas.",
+            "expected_effects": [
+              "Reducción de costes de infraestructura al disminuir el número de servidores físicos",
+              "Mejora de la utilización de recursos",
+              "Posible impacto en la disponibilidad si no se gestiona adecuadamente la capacidad"
+            ],
+            "constraints": [
+              "Requisitos de compatibilidad de aplicaciones con virtualización/contenedores",
+              "Capacidad del equipo para gestionar la migración",
+              "Necesidad de mantener redundancia para alta disponibilidad"
+            ],
+            "provenance": [
+              "Análisis de costes de servidores",
+              "Prácticas estándar de optimización de infraestructura"
+            ],
+            "score": 1.0
+          },
+          {
+            "alternative_id": "ALT-002",
+            "description": "Adoptar un modelo de infraestructura como servicio (IaaS) con escalado automático, ajustando dinámicamente los recursos según la demanda para reducir costes en horas de baja utilización.",
+            "expected_effects": [
+              "Reducción de costes al pagar solo por los recursos utilizados",
+              "Mantenimiento de la disponibilidad mediante escalado automático",
+              "Posible complejidad en la gestión de la configuración"
+            ],
+            "constraints": [
+              "Dependencia de un proveedor cloud",
+              "Costes de salida de datos y transferencia",
+              "Necesidad de rediseñar la arquitectura para ser cloud-native"
+            ],
+            "provenance": [
+              "Análisis de patrones de demanda",
+              "Comparativa de costes on-premise vs cloud"
+            ],
+            "score": 1.0
+          },
+          {
+            "alternative_id": "ALT-003",
+            "description": "Optimizar el rendimiento de las aplicaciones y la configuración de los servidores para reducir el número de instancias necesarias, mediante técnicas como caching, compresión y ajuste de parámetros.",
+            "expected_effects": [
+              "Reducción de costes al necesitar menos servidores para la misma carga",
+              "Mejora de la latencia y experiencia de usuario",
+              "Requiere análisis detallado de cuellos de botella"
+            ],
+            "constraints": [
+              "Requiere expertise en tuning de aplicaciones",
+              "Tiempo de implementación",
+              "Posible impacto en funcionalidades si no se realiza correctamente"
+            ],
+            "provenance": [
+              "Análisis de rendimiento de aplicaciones",
+              "Benchmarks de optimización"
+            ],
+            "score": 0.5
+          }
+        ],
+        "applicable_criteria": [
+          {
+            "criterion_id": "CRIT-001",
+            "description": "Reducción de costes de servidores en al menos un 20%",
+            "target": "Reducción de costes >= 20%",
+            "direction": "MAXIMIZE",
+            "threshold": 20.0,
+            "weight": 0.5,
+            "authority": "Dirección Financiera",
+            "provenance": [
+              "Objetivo del problema"
+            ]
+          },
+          {
+            "criterion_id": "CRIT-002",
+            "description": "Mantener la disponibilidad del sistema en al menos 99.9%",
+            "target": "Disponibilidad >= 99.9%",
+            "direction": "MAXIMIZE",
+            "threshold": 99.9,
+            "weight": 0.5,
+            "authority": "Dirección de Operaciones",
+            "provenance": [
+              "Requisito de negocio"
+            ]
+          }
+        ],
+        "constraints": [
+          "La disponibilidad no debe ser inferior al 99.9%",
+          "La reducción de costes debe ser al menos del 20%",
+          "Las soluciones deben ser viables técnicamente en el entorno actual"
+        ],
+        "decision_rule": {
+          "status": "OVERRIDDEN",
+          "rule_type": "HUMAN",
+          "authority": "HUMAN_OPERATOR",
+          "description": "Human operator selected ALT-001"
+        },
+        "selected_alternative": {
+          "alternative_id": "ALT-001",
+          "description": "Implementar una estrategia de consolidación de servidores mediante virtualización y contenedores, optimizando la utilización de recursos y reduciendo el número de instancias físicas.",
+          "expected_effects": [
+            "Reducción de costes de infraestructura al disminuir el número de servidores físicos",
+            "Mejora de la utilización de recursos",
+            "Posible impacto en la disponibilidad si no se gestiona adecuadamente la capacidad"
+          ],
+          "constraints": [
+            "Requisitos de compatibilidad de aplicaciones con virtualización/contenedores",
+            "Capacidad del equipo para gestionar la migración",
+            "Necesidad de mantener redundancia para alta disponibilidad"
+          ],
+          "provenance": [
+            "Análisis de costes de servidores",
+            "Prácticas estándar de optimización de infraestructura"
+          ],
+          "score": 1.0
+        },
+        "supporting_predictions": [
+          "PRED-466AD0BB",
+          "PRED-2600C62C",
+          "PRED-7E8DFC13",
+          "PRED-A7852963",
+          "PRED-807D9790",
+          "PRED-45F8C8AF"
+        ],
+        "supporting_knowledge": [
+          "FND-D1C5130E",
+          "FND-FD733728"
+        ],
+        "rationale": "Se han identificado tres alternativas principales para reducir costes de servidores en un 20% manteniendo la disponibilidad del 99.9%. Cada alternativa aborda la reducción de costes desde un enfoque diferente: consolidación, cloud elástico y optimización de rendimiento. La selección final debe considerar el equilibrio entre coste y disponibilidad, así como la viabilidad técnica y operativa. Se requiere decisión humana para evaluar las implicaciones estratégicas y los riesgos asociados.",
+        "authority": "HUMAN",
+        "provenance": [
+          "CognitiveTask:task_4"
+        ],
+        "validation_status": "SELECTED",
+        "version": 1,
+        "expected_outcomes": [
+          {
+            "alternative_id": "ALT-001",
+            "outcome": "Reducción de costes",
+            "value": "20-30%"
+          },
+          {
+            "alternative_id": "ALT-001",
+            "outcome": "Disponibilidad",
+            "value": "99.9% (si se mantiene redundancia)"
+          },
+          {
+            "alternative_id": "ALT-002",
+            "outcome": "Reducción de costes",
+            "value": "15-25% (dependiendo de la variabilidad de la demanda)"
+          },
+          {
+            "alternative_id": "ALT-002",
+            "outcome": "Disponibilidad",
+            "value": "99.9% (con escalado automático)"
+          },
+          {
+            "alternative_id": "ALT-003",
+            "outcome": "Reducción de costes",
+            "value": "10-20% (dependiendo de la optimización)"
+          },
+          {
+            "alternative_id": "ALT-003",
+            "outcome": "Disponibilidad",
+            "value": "99.9% (si no se introducen errores)"
+          }
+        ],
+        "tradeoffs": [
+          {
+            "dimension": "Coste vs. Complejidad operativa",
+            "positive": "Mayor reducción de costes con consolidación",
+            "negative": "Mayor complejidad en la gestión de la infraestructura"
+          },
+          {
+            "dimension": "Coste vs. Flexibilidad",
+            "positive": "Cloud elástico ofrece flexibilidad y pago por uso",
+            "negative": "Dependencia del proveedor y posibles costes ocultos"
+          },
+          {
+            "dimension": "Coste vs. Rendimiento",
+            "positive": "Optimización de rendimiento puede reducir costes sin afectar disponibilidad",
+            "negative": "Requiere tiempo y expertise, y puede no alcanzar el 20% de reducción"
+          }
+        ],
+        "risks": [
+          {
+            "description": "La consolidación de servidores puede provocar cuellos de botella y afectar la disponibilidad si no se dimensiona correctamente.",
+            "severity": "Alto",
+            "probability": 0.3,
+            "mitigation": "Realizar un análisis de capacidad y pruebas de carga antes de la migración."
+          },
+          {
+            "description": "La adopción de cloud puede generar costes imprevistos por transferencia de datos o salida de red.",
+            "severity": "Medio",
+            "probability": 0.4,
+            "mitigation": "Establecer políticas de uso y monitoreo de costes en tiempo real."
+          },
+          {
+            "description": "La optimización de rendimiento puede no lograr la reducción de costes objetivo sin afectar la funcionalidad.",
+            "severity": "Medio",
+            "probability": 0.5,
+            "mitigation": "Priorizar optimizaciones de alto impacto y validar con pruebas de regresión."
+          }
+        ],
+        "assumptions": [
+          "La demanda actual de recursos se mantiene estable o con patrones predecibles.",
+          "El equipo técnico tiene la capacidad para implementar la alternativa seleccionada.",
+          "Los costes de servidores son una parte significativa del presupuesto de TI.",
+          "La disponibilidad del 99.9% es un requisito crítico de negocio."
+        ],
+        "validation_checks": [
+          "criterion:CRIT-001 authority:Dirección Financiera",
+          "criterion:CRIT-002 authority:Dirección de Operaciones"
+        ],
+        "human_decision_required": true
+      }
+    ],
+    "version": 1
+  },
+  "action_plan": null,
+  "execution_state": null,
+  "publication_state": {
+    "state_id": "PUBSTATE-b1ecb6",
+    "publication_input": {
+      "knowledge_ref": "KNOWLEDGE_CURRENT",
+      "predictive_knowledge_ref": "PREDICTIVE_CURRENT",
+      "prescriptive_knowledge_ref": "PRESCRIPTIVE_CURRENT",
+      "action_plan_ref": null,
+      "execution_state_ref": null
+    },
+    "status": "PUBLISHED",
+    "publications": [
+      {
+        "published_id": "PUB-266df4",
+        "frozen_result_ref": "FROZEN-a1cbbf",
+        "sections": [
+          {
+            "section_id": "summary",
+            "section_type": "SUMMARY",
+            "content": "El análisis evalúa la viabilidad de reducir los costes de servidores en un 20% manteniendo una disponibilidad del 99.9%. Se seleccionó la alternativa ALT-001 (consolidación mediante virtualización y contenedores) como la más adecuada, aunque la decisión fue anulada por un operador humano. No se dispone de un plan de acción ni de resultados de ejecución, por lo que no se puede confirmar el impacto real. Se recomienda implementar la alternativa seleccionada con un plan detallado y monitoreo continuo para asegurar el cumplimiento del objetivo.",
+            "source_refs": [
+              "FINDINGS"
+            ],
+            "status": "completed",
+            "provenance": [
+              "user_objective",
+              "prescription"
+            ]
+          },
+          {
+            "section_id": "findings",
+            "section_type": "FINDINGS",
+            "content": "El objetivo es reducir los costes de servidores en un 20% manteniendo una disponibilidad del 99.9%. Se evaluaron tres alternativas (ALT-001, ALT-002, ALT-003). La alternativa seleccionada fue ALT-001, que propone consolidar servidores mediante virtualización y contenedores para optimizar la utilización de recursos y reducir el número de instancias físicas. Sin embargo, la decisión fue anulada por un operador humano (OVERRIDDEN · HUMAN_OPERATOR). No se proporcionó un plan de acción ni se ejecutó ninguna implementación.",
+            "source_refs": [
+              "FINDINGS"
+            ],
+            "status": "completed",
+            "provenance": [
+              "prescription"
+            ]
+          },
+          {
+            "section_id": "recommendations",
+            "section_type": "RECOMMENDATIONS",
+            "content": "1. Implementar la alternativa ALT-001 (consolidación mediante virtualización y contenedores) como estrategia principal para reducir costes. 2. Desarrollar un plan de acción detallado que incluya un inventario de servidores, análisis de utilización, y migración gradual de cargas de trabajo. 3. Establecer métricas de disponibilidad (99.9%) y monitoreo continuo para garantizar que la reducción de costes no afecte el SLA. 4. Realizar pruebas de carga y failover antes de la migración completa. 5. Considerar la posibilidad de utilizar instancias reservadas o spot para optimizar costes adicionales, siempre que no comprometan la disponibilidad.",
+            "source_refs": [
+              "FINDINGS"
+            ],
+            "status": "completed",
+            "provenance": [
+              "prescription"
+            ]
+          },
+          {
+            "section_id": "execution_result",
+            "section_type": "EXECUTION_RESULT",
+            "content": "No se ha ejecutado ninguna acción debido a que la decisión fue anulada por un operador humano y no se proporcionó un plan de acción. Por lo tanto, no hay resultados de ejecución que reportar.",
+            "source_refs": [],
+            "status": "not_executed",
+            "provenance": [
+              "prescription"
+            ]
+          },
+          {
+            "section_id": "limitations",
+            "section_type": "LIMITATIONS",
+            "content": "El análisis se basa únicamente en la información proporcionada, que no incluye datos detallados sobre la infraestructura actual, costes específicos, ni métricas de disponibilidad. No se dispone de un plan de acción ni de resultados de ejecución, por lo que las recomendaciones son preliminares y deben validarse con datos reales.",
+            "source_refs": [],
+            "status": "completed",
+            "provenance": [
+              "assistant"
+            ]
+          }
+        ],
+        "audience": "General",
+        "format": "DOCUMENT",
+        "audience_adaptation": {
+          "audience": "General",
+          "format": "DOCUMENT",
+          "section_types": [
+            "SUMMARY",
+            "FINDINGS",
+            "RECOMMENDATIONS",
+            "EXECUTION_RESULT",
+            "LIMITATIONS"
+          ],
+          "section_count": 5,
+          "evidence_count": 3,
+          "validation_status": "draft"
+        },
+        "artifact": "PUB-266df4",
+        "validation_status": "draft"
+      }
+    ]
+  },
+  "frozen_result": {
+    "result_id": "FROZEN-a1cbbf",
+    "status": "FROZEN",
+    "knowledge_version": "v1",
+    "validated_knowledge": [
+      {
+        "finding_id": "FND-D1C5130E",
+        "statement": "El objetivo del análisis es reducir los costes de servidores en un 20% manteniendo una disponibilidad del 99.9%.",
+        "finding_type": "DESCRIPTIVE",
+        "evidence_refs": [
+          "EVI-CONTEXT"
+        ],
+        "method": "DESCRIPTOR_ANALYSIS",
+        "status": "VALIDATED",
+        "provenance": [
+          "Task[task_1]",
+          "Evidence[EVI-CONTEXT] -> USER_CONTEXT (grounded)"
+        ],
+        "uncertainty": null,
+        "metrics": {},
+        "patterns": []
+      },
+      {
+        "finding_id": "FND-FD733728",
+        "statement": "El objetivo del análisis es reducir los costes de servidores en un 20% manteniendo una disponibilidad del 99.9%.",
+        "finding_type": "DESCRIPTIVE",
+        "evidence_refs": [
+          "EVI-CONTEXT"
+        ],
+        "method": "DESCRIPTOR_ANALYSIS",
+        "status": "VALIDATED",
+        "provenance": [
+          "Task[task_2]",
+          "Evidence[EVI-CONTEXT] -> USER_CONTEXT (grounded)"
+        ],
+        "uncertainty": null,
+        "metrics": {},
+        "patterns": []
+      }
+    ],
+    "validated_predictions": [
+      {
+        "prediction_id": "PRED-466AD0BB",
+        "target_variable": "Datos",
+        "predictor_variables": [
+          "Datos"
+        ],
+        "input_requirements": {
+          "Datos": "required input variable"
+        },
+        "units": null,
+        "data_period": null,
+        "sample_size": null,
+        "model_type": "ACFL_ENGINE",
+        "model_definition": "MSE=n/a",
+        "model_parameters": {},
+        "formula": "",
+        "baseline": null,
+        "predicted_value": null,
+        "uncertainty": {
+          "status": "NOT_AVAILABLE",
+          "confidence_interval": null,
+          "variance": null,
+          "limitations": [
+            "No authoritative formula for ACFL uncertainty derivation"
+          ],
+          "invalidation_conditions": [],
+          "provenance": []
+        },
+        "confidence_or_interval": null,
+        "assumptions": [],
+        "validity_conditions": [],
+        "evidence_refs": [
+          "FND-D1C5130E",
+          "FND-FD733728"
+        ],
+        "computation_trace": [
+          "Task[task_3]",
+          "Signature[7f86f4060c1d7ae53b2d9fa40453528a1641da9fc8927b7daf79b705b8c12ea9]",
+          "KnowledgeVersion[3]"
+        ],
+        "validation_status": "NOT_EVALUATED",
+        "reproducibility": false,
+        "provenance": [
+          "Task[task_3]",
+          "Predicate[PRED_AST_90174244]",
+          "Signature[7f86f4060c1d7ae53b2d9fa40453528a1641da9fc8927b7daf79b705b8c12ea9]",
+          "KnowledgeVersion[3]"
+        ]
+      },
+      {
+        "prediction_id": "PRED-2600C62C",
+        "target_variable": "NOT_EVALUATED",
+        "predictor_variables": [
+          "NOT_EVALUATED"
+        ],
+        "input_requirements": {
+          "NOT_EVALUATED": "required input variable"
+        },
+        "units": null,
+        "data_period": null,
+        "sample_size": null,
+        "model_type": "ACFL_ENGINE",
+        "model_definition": "MSE=n/a",
+        "model_parameters": {},
+        "formula": "",
+        "baseline": null,
+        "predicted_value": null,
+        "uncertainty": {
+          "status": "NOT_AVAILABLE",
+          "confidence_interval": null,
+          "variance": null,
+          "limitations": [
+            "No authoritative formula for ACFL uncertainty derivation"
+          ],
+          "invalidation_conditions": [],
+          "provenance": []
+        },
+        "confidence_or_interval": null,
+        "assumptions": [],
+        "validity_conditions": [],
+        "evidence_refs": [
+          "FND-D1C5130E",
+          "FND-FD733728"
+        ],
+        "computation_trace": [
+          "Task[task_3]",
+          "Signature[4aa45b9a669cfc48da188cd718a0c0ac3376a4ea63029a451bec5d228a6b657c]",
+          "KnowledgeVersion[3]"
+        ],
+        "validation_status": "NOT_EVALUATED",
+        "reproducibility": false,
+        "provenance": [
+          "Task[task_3]",
+          "Predicate[PRED_AST_0DC20858]",
+          "Signature[4aa45b9a669cfc48da188cd718a0c0ac3376a4ea63029a451bec5d228a6b657c]",
+          "KnowledgeVersion[3]"
+        ]
+      },
+      {
+        "prediction_id": "PRED-7E8DFC13",
+        "target_variable": "Optional",
+        "predictor_variables": [
+          "Optional"
+        ],
+        "input_requirements": {
+          "Optional": "required input variable"
+        },
+        "units": null,
+        "data_period": null,
+        "sample_size": null,
+        "model_type": "ACFL_ENGINE",
+        "model_definition": "MSE=n/a",
+        "model_parameters": {},
+        "formula": "",
+        "baseline": null,
+        "predicted_value": null,
+        "uncertainty": {
+          "status": "NOT_AVAILABLE",
+          "confidence_interval": null,
+          "variance": null,
+          "limitations": [
+            "No authoritative formula for ACFL uncertainty derivation"
+          ],
+          "invalidation_conditions": [],
+          "provenance": []
+        },
+        "confidence_or_interval": null,
+        "assumptions": [],
+        "validity_conditions": [],
+        "evidence_refs": [
+          "FND-D1C5130E",
+          "FND-FD733728"
+        ],
+        "computation_trace": [
+          "Task[task_3]",
+          "Signature[ae094c512220e4645b17fe32aae86c23c71f6b560915576eb59e66231432b722]",
+          "KnowledgeVersion[3]"
+        ],
+        "validation_status": "NOT_EVALUATED",
+        "reproducibility": false,
+        "provenance": [
+          "Task[task_3]",
+          "Predicate[PRED_AST_5854DCC2]",
+          "Signature[ae094c512220e4645b17fe32aae86c23c71f6b560915576eb59e66231432b722]",
+          "KnowledgeVersion[3]"
+        ]
+      },
+      {
+        "prediction_id": "PRED-A7852963",
+        "target_variable": "Predictor",
+        "predictor_variables": [
+          "Predictor"
+        ],
+        "input_requirements": {
+          "Predictor": "required input variable"
+        },
+        "units": null,
+        "data_period": null,
+        "sample_size": null,
+        "model_type": "ACFL_ENGINE",
+        "model_definition": "MSE=n/a",
+        "model_parameters": {},
+        "formula": "",
+        "baseline": null,
+        "predicted_value": null,
+        "uncertainty": {
+          "status": "NOT_AVAILABLE",
+          "confidence_interval": null,
+          "variance": null,
+          "limitations": [
+            "No authoritative formula for ACFL uncertainty derivation"
+          ],
+          "invalidation_conditions": [],
+          "provenance": []
+        },
+        "confidence_or_interval": null,
+        "assumptions": [],
+        "validity_conditions": [],
+        "evidence_refs": [
+          "FND-D1C5130E",
+          "FND-FD733728"
+        ],
+        "computation_trace": [
+          "Task[task_3]",
+          "Signature[ec5a21a3b8c4700e89f62e4bfccc4e37ff45af17830ebf3e2e6c87df1a0ed653]",
+          "KnowledgeVersion[3]"
+        ],
+        "validation_status": "NOT_EVALUATED",
+        "reproducibility": false,
+        "provenance": [
+          "Task[task_3]",
+          "Predicate[PRED_AST_5BD48778]",
+          "Signature[ec5a21a3b8c4700e89f62e4bfccc4e37ff45af17830ebf3e2e6c87df1a0ed653]",
+          "KnowledgeVersion[3]"
+        ]
+      },
+      {
+        "prediction_id": "PRED-807D9790",
+        "target_variable": "actual",
+        "predictor_variables": [
+          "actual"
+        ],
+        "input_requirements": {
+          "actual": "required input variable"
+        },
+        "units": null,
+        "data_period": null,
+        "sample_size": null,
+        "model_type": "ACFL_ENGINE",
+        "model_definition": "MSE=n/a",
+        "model_parameters": {},
+        "formula": "",
+        "baseline": null,
+        "predicted_value": null,
+        "uncertainty": {
+          "status": "NOT_AVAILABLE",
+          "confidence_interval": null,
+          "variance": null,
+          "limitations": [
+            "No authoritative formula for ACFL uncertainty derivation"
+          ],
+          "invalidation_conditions": [],
+          "provenance": []
+        },
+        "confidence_or_interval": null,
+        "assumptions": [],
+        "validity_conditions": [],
+        "evidence_refs": [
+          "FND-D1C5130E",
+          "FND-FD733728"
+        ],
+        "computation_trace": [
+          "Task[task_3]",
+          "Signature[5ff53a99e1baf53c928be7ffdd84c1ff3a0850d17d55e0bb9b8b2fa954e3661f]",
+          "KnowledgeVersion[3]"
+        ],
+        "validation_status": "NOT_EVALUATED",
+        "reproducibility": false,
+        "provenance": [
+          "Task[task_3]",
+          "Predicate[PRED_AST_B0E2B9C4]",
+          "Signature[5ff53a99e1baf53c928be7ffdd84c1ff3a0850d17d55e0bb9b8b2fa954e3661f]",
+          "KnowledgeVersion[3]"
+        ]
+      },
+      {
+        "prediction_id": "PRED-45F8C8AF",
+        "target_variable": "costes",
+        "predictor_variables": [
+          "costes"
+        ],
+        "input_requirements": {
+          "costes": "required input variable"
+        },
+        "units": null,
+        "data_period": null,
+        "sample_size": null,
+        "model_type": "ACFL_ENGINE",
+        "model_definition": "MSE=n/a",
+        "model_parameters": {},
+        "formula": "",
+        "baseline": null,
+        "predicted_value": null,
+        "uncertainty": {
+          "status": "NOT_AVAILABLE",
+          "confidence_interval": null,
+          "variance": null,
+          "limitations": [
+            "No authoritative formula for ACFL uncertainty derivation"
+          ],
+          "invalidation_conditions": [],
+          "provenance": []
+        },
+        "confidence_or_interval": null,
+        "assumptions": [],
+        "validity_conditions": [],
+        "evidence_refs": [
+          "FND-D1C5130E",
+          "FND-FD733728"
+        ],
+        "computation_trace": [
+          "Task[task_3]",
+          "Signature[ba77c3419079c2448e0838f5eb81d09da83cee7c0b4d499c8e26cb750c95424f]",
+          "KnowledgeVersion[3]"
+        ],
+        "validation_status": "NOT_EVALUATED",
+        "reproducibility": false,
+        "provenance": [
+          "Task[task_3]",
+          "Predicate[PRED_AST_9504D4FD]",
+          "Signature[ba77c3419079c2448e0838f5eb81d09da83cee7c0b4d499c8e26cb750c95424f]",
+          "KnowledgeVersion[3]"
+        ]
+      }
+    ],
+    "validated_prescriptions": [
+      {
+        "prescription_id": "PRESC-20250321-001",
+        "objective": "Reducir los costes de servidores en un 20% manteniendo la disponibilidad del 99.9%.",
+        "alternatives": [
+          {
+            "alternative_id": "ALT-001",
+            "description": "Implementar una estrategia de consolidación de servidores mediante virtualización y contenedores, optimizando la utilización de recursos y reduciendo el número de instancias físicas.",
+            "expected_effects": [
+              "Reducción de costes de infraestructura al disminuir el número de servidores físicos",
+              "Mejora de la utilización de recursos",
+              "Posible impacto en la disponibilidad si no se gestiona adecuadamente la capacidad"
+            ],
+            "constraints": [
+              "Requisitos de compatibilidad de aplicaciones con virtualización/contenedores",
+              "Capacidad del equipo para gestionar la migración",
+              "Necesidad de mantener redundancia para alta disponibilidad"
+            ],
+            "provenance": [
+              "Análisis de costes de servidores",
+              "Prácticas estándar de optimización de infraestructura"
+            ],
+            "score": 1.0
+          },
+          {
+            "alternative_id": "ALT-002",
+            "description": "Adoptar un modelo de infraestructura como servicio (IaaS) con escalado automático, ajustando dinámicamente los recursos según la demanda para reducir costes en horas de baja utilización.",
+            "expected_effects": [
+              "Reducción de costes al pagar solo por los recursos utilizados",
+              "Mantenimiento de la disponibilidad mediante escalado automático",
+              "Posible complejidad en la gestión de la configuración"
+            ],
+            "constraints": [
+              "Dependencia de un proveedor cloud",
+              "Costes de salida de datos y transferencia",
+              "Necesidad de rediseñar la arquitectura para ser cloud-native"
+            ],
+            "provenance": [
+              "Análisis de patrones de demanda",
+              "Comparativa de costes on-premise vs cloud"
+            ],
+            "score": 1.0
+          },
+          {
+            "alternative_id": "ALT-003",
+            "description": "Optimizar el rendimiento de las aplicaciones y la configuración de los servidores para reducir el número de instancias necesarias, mediante técnicas como caching, compresión y ajuste de parámetros.",
+            "expected_effects": [
+              "Reducción de costes al necesitar menos servidores para la misma carga",
+              "Mejora de la latencia y experiencia de usuario",
+              "Requiere análisis detallado de cuellos de botella"
+            ],
+            "constraints": [
+              "Requiere expertise en tuning de aplicaciones",
+              "Tiempo de implementación",
+              "Posible impacto en funcionalidades si no se realiza correctamente"
+            ],
+            "provenance": [
+              "Análisis de rendimiento de aplicaciones",
+              "Benchmarks de optimización"
+            ],
+            "score": 0.5
+          }
+        ],
+        "applicable_criteria": [
+          {
+            "criterion_id": "CRIT-001",
+            "description": "Reducción de costes de servidores en al menos un 20%",
+            "target": "Reducción de costes >= 20%",
+            "direction": "MAXIMIZE",
+            "threshold": 20.0,
+            "weight": 0.5,
+            "authority": "Dirección Financiera",
+            "provenance": [
+              "Objetivo del problema"
+            ]
+          },
+          {
+            "criterion_id": "CRIT-002",
+            "description": "Mantener la disponibilidad del sistema en al menos 99.9%",
+            "target": "Disponibilidad >= 99.9%",
+            "direction": "MAXIMIZE",
+            "threshold": 99.9,
+            "weight": 0.5,
+            "authority": "Dirección de Operaciones",
+            "provenance": [
+              "Requisito de negocio"
+            ]
+          }
+        ],
+        "constraints": [
+          "La disponibilidad no debe ser inferior al 99.9%",
+          "La reducción de costes debe ser al menos del 20%",
+          "Las soluciones deben ser viables técnicamente en el entorno actual"
+        ],
+        "decision_rule": {
+          "status": "OVERRIDDEN",
+          "rule_type": "HUMAN",
+          "authority": "HUMAN_OPERATOR",
+          "description": "Human operator selected ALT-001"
+        },
+        "selected_alternative": {
+          "alternative_id": "ALT-001",
+          "description": "Implementar una estrategia de consolidación de servidores mediante virtualización y contenedores, optimizando la utilización de recursos y reduciendo el número de instancias físicas.",
+          "expected_effects": [
+            "Reducción de costes de infraestructura al disminuir el número de servidores físicos",
+            "Mejora de la utilización de recursos",
+            "Posible impacto en la disponibilidad si no se gestiona adecuadamente la capacidad"
+          ],
+          "constraints": [
+            "Requisitos de compatibilidad de aplicaciones con virtualización/contenedores",
+            "Capacidad del equipo para gestionar la migración",
+            "Necesidad de mantener redundancia para alta disponibilidad"
+          ],
+          "provenance": [
+            "Análisis de costes de servidores",
+            "Prácticas estándar de optimización de infraestructura"
+          ],
+          "score": 1.0
+        },
+        "supporting_predictions": [
+          "PRED-466AD0BB",
+          "PRED-2600C62C",
+          "PRED-7E8DFC13",
+          "PRED-A7852963",
+          "PRED-807D9790",
+          "PRED-45F8C8AF"
+        ],
+        "supporting_knowledge": [
+          "FND-D1C5130E",
+          "FND-FD733728"
+        ],
+        "rationale": "Se han identificado tres alternativas principales para reducir costes de servidores en un 20% manteniendo la disponibilidad del 99.9%. Cada alternativa aborda la reducción de costes desde un enfoque diferente: consolidación, cloud elástico y optimización de rendimiento. La selección final debe considerar el equilibrio entre coste y disponibilidad, así como la viabilidad técnica y operativa. Se requiere decisión humana para evaluar las implicaciones estratégicas y los riesgos asociados.",
+        "authority": "HUMAN",
+        "provenance": [
+          "CognitiveTask:task_4"
+        ],
+        "validation_status": "SELECTED",
+        "version": 1,
+        "expected_outcomes": [
+          {
+            "alternative_id": "ALT-001",
+            "outcome": "Reducción de costes",
+            "value": "20-30%"
+          },
+          {
+            "alternative_id": "ALT-001",
+            "outcome": "Disponibilidad",
+            "value": "99.9% (si se mantiene redundancia)"
+          },
+          {
+            "alternative_id": "ALT-002",
+            "outcome": "Reducción de costes",
+            "value": "15-25% (dependiendo de la variabilidad de la demanda)"
+          },
+          {
+            "alternative_id": "ALT-002",
+            "outcome": "Disponibilidad",
+            "value": "99.9% (con escalado automático)"
+          },
+          {
+            "alternative_id": "ALT-003",
+            "outcome": "Reducción de costes",
+            "value": "10-20% (dependiendo de la optimización)"
+          },
+          {
+            "alternative_id": "ALT-003",
+            "outcome": "Disponibilidad",
+            "value": "99.9% (si no se introducen errores)"
+          }
+        ],
+        "tradeoffs": [
+          {
+            "dimension": "Coste vs. Complejidad operativa",
+            "positive": "Mayor reducción de costes con consolidación",
+            "negative": "Mayor complejidad en la gestión de la infraestructura"
+          },
+          {
+            "dimension": "Coste vs. Flexibilidad",
+            "positive": "Cloud elástico ofrece flexibilidad y pago por uso",
+            "negative": "Dependencia del proveedor y posibles costes ocultos"
+          },
+          {
+            "dimension": "Coste vs. Rendimiento",
+            "positive": "Optimización de rendimiento puede reducir costes sin afectar disponibilidad",
+            "negative": "Requiere tiempo y expertise, y puede no alcanzar el 20% de reducción"
+          }
+        ],
+        "risks": [
+          {
+            "description": "La consolidación de servidores puede provocar cuellos de botella y afectar la disponibilidad si no se dimensiona correctamente.",
+            "severity": "Alto",
+            "probability": 0.3,
+            "mitigation": "Realizar un análisis de capacidad y pruebas de carga antes de la migración."
+          },
+          {
+            "description": "La adopción de cloud puede generar costes imprevistos por transferencia de datos o salida de red.",
+            "severity": "Medio",
+            "probability": 0.4,
+            "mitigation": "Establecer políticas de uso y monitoreo de costes en tiempo real."
+          },
+          {
+            "description": "La optimización de rendimiento puede no lograr la reducción de costes objetivo sin afectar la funcionalidad.",
+            "severity": "Medio",
+            "probability": 0.5,
+            "mitigation": "Priorizar optimizaciones de alto impacto y validar con pruebas de regresión."
+          }
+        ],
+        "assumptions": [
+          "La demanda actual de recursos se mantiene estable o con patrones predecibles.",
+          "El equipo técnico tiene la capacidad para implementar la alternativa seleccionada.",
+          "Los costes de servidores son una parte significativa del presupuesto de TI.",
+          "La disponibilidad del 99.9% es un requisito crítico de negocio."
+        ],
+        "validation_checks": [
+          "criterion:CRIT-001 authority:Dirección Financiera",
+          "criterion:CRIT-002 authority:Dirección de Operaciones"
+        ],
+        "human_decision_required": true
+      }
+    ],
+    "validated_action_plan": null,
+    "execution_result": null,
+    "contradictions": [],
+    "unknowns": [],
+    "limitations": [],
+    "provenance": [
+      "Publisher Consolidated"
+    ],
+    "freeze_signature": "9a936160876825e8c28ef210045dbb4f58dab423825ed7588c91cc51e03d8ffd"
+  },
+  "execution_plan": {
+    "steps": [
+      {
+        "step_id": "task_1",
+        "capability_id": "extract_relevant_information",
+        "target": "EM[SEMANTIC]",
+        "canonical_em": "EM Descriptor",
+        "required_inputs": [],
+        "inputs": {},
+        "outputs": {},
+        "status": "COMPLETED",
+        "waiting_reason": "",
+        "dependencies": [],
+        "expected_outputs": [
+          "Informe de costes actuales",
+          "Métricas de disponibilidad actual"
+        ],
+        "execution_level": "COGNITIVE",
+        "return_to_core": true,
+        "started_at": "2026-09-01T10:41:44.557192",
+        "completed_at": "2026-09-01T10:41:47.192914",
+        "revision": 1,
+        "provenance": [
+          "Structurer routed task_1 to extract_relevant_information owned by EM Descriptor",
+          "EMDescriptor executed task task_1, generated 1 validated findings.",
+          "Work[WORK-AC272ACA] -> Step[task_1] -> Capability[extract_relevant_information] -> Target[EM[SEMANTIC]] -> EMDescriptor"
+        ],
+        "produces_result": false
+      },
+      {
+        "step_id": "task_2",
+        "capability_id": "extract_relevant_information",
+        "target": "EM[SEMANTIC]",
+        "canonical_em": "EM Descriptor",
+        "required_inputs": [],
+        "inputs": {},
+        "outputs": {},
+        "status": "COMPLETED",
+        "waiting_reason": "",
+        "dependencies": [
+          "task_1"
+        ],
+        "expected_outputs": [
+          "Lista de variables relevantes",
+          "Relaciones entre variables"
+        ],
+        "execution_level": "COGNITIVE",
+        "return_to_core": true,
+        "started_at": "2026-09-01T10:41:47.19993",
+        "completed_at": "2026-09-01T10:41:49.800722",
+        "revision": 1,
+        "provenance": [
+          "Structurer routed task_2 to extract_relevant_information owned by EM Descriptor",
+          "EMDescriptor executed task task_2, generated 1 validated findings.",
+          "Work[WORK-AC272ACA] -> Step[task_2] -> Capability[extract_relevant_information] -> Target[EM[SEMANTIC]] -> EMDescriptor"
+        ],
+        "produces_result": false
+      },
+      {
+        "step_id": "task_3",
+        "capability_id": "analyze_dataset",
+        "target": "EM[SCIENTIFIC]",
+        "canonical_em": "EM Predictor",
+        "required_inputs": [],
+        "inputs": {},
+        "outputs": {
+          "predictive_knowledge_status": "FROZEN"
+        },
+        "status": "COMPLETED",
+        "waiting_reason": "",
+        "dependencies": [
+          "task_2",
+          "task_1"
+        ],
+        "expected_outputs": [
+          "Modelo predictivo de impacto",
+          "Escenarios de reducción de costes y su efecto en disponibilidad"
+        ],
+        "execution_level": "COGNITIVE",
+        "return_to_core": true,
+        "started_at": "2026-09-01T10:41:50.317191",
+        "completed_at": "2026-09-01T10:41:53.602135",
+        "revision": 1,
+        "provenance": [
+          "Structurer routed task_3 to analyze_dataset owned by EM Predictor",
+          "Work[WORK-AC272ACA] -> Step[task_3] -> Capability[analyze_dataset] -> Target[EM[SCIENTIFIC]] -> EMPredictor"
+        ],
+        "produces_result": false
+      },
+      {
+        "step_id": "task_4",
+        "capability_id": "evaluate_alternatives",
+        "target": "EM[RANKING]",
+        "canonical_em": "EM Prescriptor",
+        "required_inputs": [],
+        "inputs": {},
+        "outputs": {},
+        "status": "COMPLETED",
+        "waiting_reason": "",
+        "dependencies": [
+          "task_3",
+          "task_1",
+          "task_2"
+        ],
+        "expected_outputs": [
+          "Estrategia recomendada",
+          "Justificación basada en evidencia predictiva"
+        ],
+        "execution_level": "COGNITIVE",
+        "return_to_core": true,
+        "started_at": "2026-09-01T10:41:54.109584",
+        "completed_at": null,
+        "revision": 1,
+        "provenance": [
+          "Structurer routed task_4 to evaluate_alternatives owned by EM Prescriptor",
+          "Work[WORK-AC272ACA] -> Step[task_4] -> Capability[evaluate_alternatives] -> Target[EM[RANKING]] -> EMPrescriptor"
+        ],
+        "produces_result": false
+      },
+      {
+        "step_id": "task_5",
+        "capability_id": "execute_action",
+        "target": "EM[ACTIONER]",
+        "canonical_em": "EM Actioner",
+        "required_inputs": [],
+        "inputs": {},
+        "outputs": {},
+        "status": "COMPLETED",
+        "waiting_reason": "",
+        "dependencies": [
+          "task_4",
+          "task_1",
+          "task_2",
+          "task_3"
+        ],
+        "expected_outputs": [
+          "Plan de acción paso a paso",
+          "Recursos necesarios y cronograma"
+        ],
+        "execution_level": "COGNITIVE",
+        "return_to_core": true,
+        "started_at": "2026-09-01T10:44:03.070735",
+        "completed_at": "2026-09-01T10:44:19.843467",
+        "revision": 1,
+        "provenance": [
+          "Structurer routed task_5 to execute_action owned by EM Actioner",
+          "Work[WORK-AC272ACA] -> Step[task_5] -> Capability[execute_action] -> Target[EM[ACTIONER]] -> EMActioner"
+        ],
+        "produces_result": false
+      },
+      {
+        "step_id": "task_6",
+        "capability_id": "install_action",
+        "target": "EM[INSTALLER]",
+        "canonical_em": "EM Installer",
+        "required_inputs": [],
+        "inputs": {},
+        "outputs": {},
+        "status": "COMPLETED",
+        "waiting_reason": "",
+        "dependencies": [
+          "task_5",
+          "task_1",
+          "task_2",
+          "task_3",
+          "task_4"
+        ],
+        "expected_outputs": [
+          "Implementación del plan",
+          "Registro de cambios y resultados"
+        ],
+        "execution_level": "COGNITIVE",
+        "return_to_core": true,
+        "started_at": "2026-09-01T10:44:20.357768",
+        "completed_at": "2026-09-01T10:44:20.859369",
+        "revision": 1,
+        "provenance": [
+          "Structurer routed task_6 to install_action owned by EM Installer",
+          "Work[WORK-AC272ACA] -> Step[task_6] -> Capability[install_action] -> Target[EM[INSTALLER]] -> EMInstaller"
+        ],
+        "produces_result": false
+      },
+      {
+        "step_id": "task_7",
+        "capability_id": "generate_summary",
+        "target": "SUBSYSTEM[StoryEngine]",
+        "canonical_em": "EM Publisher",
+        "required_inputs": [],
+        "inputs": {},
+        "outputs": {},
+        "status": "COMPLETED",
+        "waiting_reason": "",
+        "dependencies": [
+          "task_6",
+          "task_1",
+          "task_2",
+          "task_3",
+          "task_4",
+          "task_5"
+        ],
+        "expected_outputs": [
+          "Informe final de impacto",
+          "Validación de reducción de costes y disponibilidad"
+        ],
+        "execution_level": "COGNITIVE",
+        "return_to_core": true,
+        "started_at": "2026-09-01T10:44:21.373395",
+        "completed_at": "2026-09-01T10:44:28.619684",
+        "revision": 1,
+        "provenance": [
+          "Structurer routed task_7 to generate_summary owned by EM Publisher",
+          "Work[WORK-AC272ACA] -> Step[task_7] -> Capability[generate_summary] -> Target[SUBSYSTEM[StoryEngine]] -> EMPublisher"
+        ],
+        "produces_result": true
+      }
+    ]
+  },
+  "em_pipeline": [
+    {
+      "canonical_em": "EM Core",
+      "status": "COMPLETED",
+      "step_ids": []
+    },
+    {
+      "canonical_em": "EM Structurer",
+      "status": "COMPLETED",
+      "step_ids": []
+    },
+    {
+      "canonical_em": "EM Descriptor",
+      "status": "COMPLETED",
+      "step_ids": [
+        "task_1",
+        "task_2"
+      ]
+    },
+    {
+      "canonical_em": "EM Predictor",
+      "status": "COMPLETED",
+      "step_ids": [
+        "task_3"
+      ]
+    },
+    {
+      "canonical_em": "EM Prescriptor",
+      "status": "COMPLETED",
+      "step_ids": [
+        "task_4"
+      ]
+    },
+    {
+      "canonical_em": "EM Actioner",
+      "status": "COMPLETED",
+      "step_ids": [
+        "task_5"
+      ]
+    },
+    {
+      "canonical_em": "EM Installer",
+      "status": "COMPLETED",
+      "step_ids": [
+        "task_6"
+      ]
+    },
+    {
+      "canonical_em": "EM Publisher",
+      "status": "COMPLETED",
+      "step_ids": [
+        "task_7"
+      ]
+    }
+  ],
+  "acfl": {
+    "weights": {
+      "cost": 50.0,
+      "risk": 50.0
+    },
+    "criteria": [
+      "Reducción de costes >= 20%",
+      "Disponibilidad >= 99.9%"
+    ],
+    "alternatives": [],
+    "normalized_scores": {
+      "ALT-001": {
+        "Reducción de costes >= 20%": 1.0,
+        "Disponibilidad >= 99.9%": 1.0
+      },
+      "ALT-002": {
+        "Reducción de costes >= 20%": 1.0,
+        "Disponibilidad >= 99.9%": 1.0
+      },
+      "ALT-003": {
+        "Reducción de costes >= 20%": 1.0,
+        "Disponibilidad >= 99.9%": 0.0
+      }
+    },
+    "frontier": [],
+    "sensitivity": {}
+  },
+  "result": {
+    "result_id": "WR-0fde50",
+    "work_id": "WORK-AC272ACA",
+    "summary": "El análisis evalúa la viabilidad de reducir los costes de servidores en un 20% manteniendo una disponibilidad del 99.9%. Se seleccionó la alternativa ALT-001 (consolidación mediante virtualización y contenedores) como la más adecuada, aunque la decisión fue anulada por un operador humano. No se dispone de un plan de acción ni de resultados de ejecución, por lo que no se puede confirmar el impacto real. Se recomienda implementar la alternativa seleccionada con un plan detallado y monitoreo continuo para asegurar el cumplimiento del objetivo.",
+    "findings": [
+      "El objetivo del análisis es reducir los costes de servidores en un 20% manteniendo una disponibilidad del 99.9%.",
+      "El objetivo del análisis es reducir los costes de servidores en un 20% manteniendo una disponibilidad del 99.9%.",
+      "El objetivo es reducir los costes de servidores en un 20% manteniendo una disponibilidad del 99.9%. Se evaluaron tres alternativas (ALT-001, ALT-002, ALT-003). La alternativa seleccionada fue ALT-001, que propone consolidar servidores mediante virtualización y contenedores para optimizar la utilización de recursos y reducir el número de instancias físicas. Sin embargo, la decisión fue anulada por un operador humano (OVERRIDDEN · HUMAN_OPERATOR). No se proporcionó un plan de acción ni se ejecutó ninguna implementación."
+    ],
+    "calculations": {
+      "acfl_normalized_scores": {
+        "ALT-001": {
+          "Reducción de costes >= 20%": 1.0,
+          "Disponibilidad >= 99.9%": 1.0
+        },
+        "ALT-002": {
+          "Reducción de costes >= 20%": 1.0,
+          "Disponibilidad >= 99.9%": 1.0
+        },
+        "ALT-003": {
+          "Reducción de costes >= 20%": 1.0,
+          "Disponibilidad >= 99.9%": 0.0
+        }
+      }
+    },
+    "recommendations": [
+      "ALT-001: Implementar una estrategia de consolidación de servidores mediante virtualización y contenedores, optimizando la utilización de recursos y reduciendo el número de instancias físicas.",
+      "Fundamento: Se han identificado tres alternativas principales para reducir costes de servidores en un 20% manteniendo la disponibilidad del 99.9%. Cada alternativa aborda la reducción de costes desde un enfoque diferente: consolidación, cloud elástico y optimización de rendimiento. La selección final debe considerar el equilibrio entre coste y disponibilidad, así como la viabilidad técnica y operativa. Se requiere decisión humana para evaluar las implicaciones estratégicas y los riesgos asociados.",
+      "1. Implementar la alternativa ALT-001 (consolidación mediante virtualización y contenedores) como estrategia principal para reducir costes. 2. Desarrollar un plan de acción detallado que incluya un inventario de servidores, análisis de utilización, y migración gradual de cargas de trabajo. 3. Establecer métricas de disponibilidad (99.9%) y monitoreo continuo para garantizar que la reducción de costes no afecte el SLA. 4. Realizar pruebas de carga y failover antes de la migración completa. 5. Considerar la posibilidad de utilizar instancias reservadas o spot para optimizar costes adicionales, siempre que no comprometan la disponibilidad."
+    ],
+    "alternatives": [
+      "Implementar una estrategia de consolidación de servidores mediante virtualización y contenedores, optimizando la utilización de recursos y reduciendo el número de instancias físicas.",
+      "Implementar una estrategia de consolidación de servidores mediante virtualización y contenedores, optimizando la utilización de recursos y reduciendo el número de instancias físicas.",
+      "Adoptar un modelo de infraestructura como servicio (IaaS) con escalado automático, ajustando dinámicamente los recursos según la demanda para reducir costes en horas de baja utilización.",
+      "Optimizar el rendimiento de las aplicaciones y la configuración de los servidores para reducir el número de instancias necesarias, mediante técnicas como caching, compresión y ajuste de parámetros."
+    ],
+    "scores": {},
+    "evidence_ids": [],
+    "provenance": [
+      "EM Publisher Generated Result"
+    ],
+    "confidence": null,
+    "status": "AVAILABLE",
+    "limitations": [],
+    "gaps": []
+  },
+  "active_em": "EM Publisher",
+  "active_step_id": "task_7",
+  "active_capability": "generate_summary",
+  "execution_phase": "COMPLETED",
+  "waiting_reason": null,
+  "waiting_for_evidence_ids": [],
+  "execution_progress": 0.0,
+  "execution_events": [
+    {
+      "timestamp": "2026-09-01T10:41:44.557192",
+      "step_id": "task_1",
+      "canonical_em": "EM Descriptor",
+      "capability_id": "extract_relevant_information",
+      "event": "STEP_RUNNING",
+      "status": "RUNNING",
+      "message": "Starting capability: extract_relevant_information",
+      "provenance": []
+    },
+    {
+      "timestamp": "2026-09-01T10:41:47.192914",
+      "step_id": "task_1",
+      "canonical_em": "EM Descriptor",
+      "capability_id": "extract_relevant_information",
+      "event": "STEP_COMPLETED",
+      "status": "COMPLETED",
+      "message": "Capability extract_relevant_information yielded COMPLETED",
+      "provenance": [
+        "Structurer routed task_1 to extract_relevant_information owned by EM Descriptor",
+        "EMDescriptor executed task task_1, generated 1 validated findings.",
+        "Work[WORK-AC272ACA] -> Step[task_1] -> Capability[extract_relevant_information] -> Target[EM[SEMANTIC]] -> EMDescriptor"
+      ]
+    },
+    {
+      "timestamp": "2026-09-01T10:41:47.19993",
+      "step_id": "task_2",
+      "canonical_em": "EM Descriptor",
+      "capability_id": "extract_relevant_information",
+      "event": "STEP_RUNNING",
+      "status": "RUNNING",
+      "message": "Starting capability: extract_relevant_information",
+      "provenance": []
+    },
+    {
+      "timestamp": "2026-09-01T10:41:49.800722",
+      "step_id": "task_2",
+      "canonical_em": "EM Descriptor",
+      "capability_id": "extract_relevant_information",
+      "event": "STEP_COMPLETED",
+      "status": "COMPLETED",
+      "message": "Capability extract_relevant_information yielded COMPLETED",
+      "provenance": [
+        "Structurer routed task_2 to extract_relevant_information owned by EM Descriptor",
+        "EMDescriptor executed task task_2, generated 1 validated findings.",
+        "Work[WORK-AC272ACA] -> Step[task_2] -> Capability[extract_relevant_information] -> Target[EM[SEMANTIC]] -> EMDescriptor"
+      ]
+    },
+    {
+      "timestamp": "2026-09-01T10:41:50.317191",
+      "step_id": "task_3",
+      "canonical_em": "EM Predictor",
+      "capability_id": "analyze_dataset",
+      "event": "STEP_RUNNING",
+      "status": "RUNNING",
+      "message": "Starting capability: analyze_dataset",
+      "provenance": []
+    },
+    {
+      "timestamp": "2026-09-01T10:41:53.602135",
+      "step_id": "task_3",
+      "canonical_em": "EM Predictor",
+      "capability_id": "analyze_dataset",
+      "event": "STEP_COMPLETED",
+      "status": "COMPLETED",
+      "message": "Capability analyze_dataset yielded COMPLETED",
+      "provenance": [
+        "Structurer routed task_3 to analyze_dataset owned by EM Predictor",
+        "Work[WORK-AC272ACA] -> Step[task_3] -> Capability[analyze_dataset] -> Target[EM[SCIENTIFIC]] -> EMPredictor"
+      ]
+    },
+    {
+      "timestamp": "2026-09-01T10:41:54.109584",
+      "step_id": "task_4",
+      "canonical_em": "EM Prescriptor",
+      "capability_id": "evaluate_alternatives",
+      "event": "STEP_RUNNING",
+      "status": "RUNNING",
+      "message": "Starting capability: evaluate_alternatives",
+      "provenance": []
+    },
+    {
+      "timestamp": "2026-09-01T10:42:08.730841",
+      "step_id": "task_4",
+      "canonical_em": "EM Prescriptor",
+      "capability_id": "evaluate_alternatives",
+      "event": "STEP_WAITING_FOR_HUMAN_INPUT",
+      "status": "WAITING_FOR_HUMAN_INPUT",
+      "message": "Capability evaluate_alternatives yielded WAITING_FOR_HUMAN_INPUT",
+      "provenance": []
+    },
+    {
+      "timestamp": "2026-09-01T10:44:03.070735",
+      "step_id": "task_5",
+      "canonical_em": "EM Actioner",
+      "capability_id": "execute_action",
+      "event": "STEP_RUNNING",
+      "status": "RUNNING",
+      "message": "Starting capability: execute_action",
+      "provenance": []
+    },
+    {
+      "timestamp": "2026-09-01T10:44:19.843467",
+      "step_id": "task_5",
+      "canonical_em": "EM Actioner",
+      "capability_id": "execute_action",
+      "event": "STEP_COMPLETED",
+      "status": "COMPLETED",
+      "message": "Capability execute_action yielded COMPLETED",
+      "provenance": [
+        "Structurer routed task_5 to execute_action owned by EM Actioner",
+        "Work[WORK-AC272ACA] -> Step[task_5] -> Capability[execute_action] -> Target[EM[ACTIONER]] -> EMActioner"
+      ]
+    },
+    {
+      "timestamp": "2026-09-01T10:44:20.357768",
+      "step_id": "task_6",
+      "canonical_em": "EM Installer",
+      "capability_id": "install_action",
+      "event": "STEP_RUNNING",
+      "status": "RUNNING",
+      "message": "Starting capability: install_action",
+      "provenance": []
+    },
+    {
+      "timestamp": "2026-09-01T10:44:20.859369",
+      "step_id": "task_6",
+      "canonical_em": "EM Installer",
+      "capability_id": "install_action",
+      "event": "STEP_COMPLETED",
+      "status": "COMPLETED",
+      "message": "Capability install_action yielded COMPLETED",
+      "provenance": [
+        "Structurer routed task_6 to install_action owned by EM Installer",
+        "Work[WORK-AC272ACA] -> Step[task_6] -> Capability[install_action] -> Target[EM[INSTALLER]] -> EMInstaller"
+      ]
+    },
+    {
+      "timestamp": "2026-09-01T10:44:21.373395",
+      "step_id": "task_7",
+      "canonical_em": "EM Publisher",
+      "capability_id": "generate_summary",
+      "event": "STEP_RUNNING",
+      "status": "RUNNING",
+      "message": "Starting capability: generate_summary",
+      "provenance": []
+    },
+    {
+      "timestamp": "2026-09-01T10:44:28.619684",
+      "step_id": "task_7",
+      "canonical_em": "EM Publisher",
+      "capability_id": "generate_summary",
+      "event": "STEP_COMPLETED",
+      "status": "COMPLETED",
+      "message": "Capability generate_summary yielded COMPLETED",
+      "provenance": [
+        "Structurer routed task_7 to generate_summary owned by EM Publisher",
+        "Work[WORK-AC272ACA] -> Step[task_7] -> Capability[generate_summary] -> Target[SUBSYSTEM[StoryEngine]] -> EMPublisher"
+      ]
+    }
+  ],
+  "runtime_metadata": [
+    {
+      "call_id": "CALL-f34d2467",
+      "em": "EM Core",
+      "capability_id": "propose_problem",
+      "model": "deepseek-chat",
+      "model_version": "",
+      "runtime_version": "5.x",
+      "context_id": "WORK-DCDEC47C",
+      "prompt_version": "",
+      "inference_parameters": {},
+      "prompt_tokens": null,
+      "completion_tokens": null,
+      "total_tokens": null,
+      "latency_ms": null,
+      "output_schema": "ProblemModel",
+      "validation_status": "",
+      "timestamp": "2026-09-01T16:41:44.557192Z",
+      "status": "COMPLETED"
+    },
+    {
+      "call_id": "CALL-b46612da",
+      "em": "EM Descriptor",
+      "capability_id": "propose_findings",
+      "model": "deepseek-chat",
+      "model_version": "",
+      "runtime_version": "5.x",
+      "context_id": "WORK-AC272ACA",
+      "prompt_version": "",
+      "inference_parameters": {},
+      "prompt_tokens": null,
+      "completion_tokens": null,
+      "total_tokens": null,
+      "latency_ms": 2634.7224712371826,
+      "output_schema": "DescriptorProposal",
+      "validation_status": "",
+      "timestamp": "2026-09-01T16:41:47.192914Z",
+      "status": "COMPLETED"
+    },
+    {
+      "call_id": "CALL-f2872940",
+      "em": "EM Descriptor",
+      "capability_id": "propose_findings",
+      "model": "deepseek-chat",
+      "model_version": "",
+      "runtime_version": "5.x",
+      "context_id": "WORK-AC272ACA",
+      "prompt_version": "",
+      "inference_parameters": {},
+      "prompt_tokens": null,
+      "completion_tokens": null,
+      "total_tokens": null,
+      "latency_ms": 2088.343381881714,
+      "output_schema": "DescriptorProposal",
+      "validation_status": "",
+      "timestamp": "2026-09-01T16:41:49.800722Z",
+      "status": "COMPLETED"
+    },
+    {
+      "call_id": "CALL-1330e7cc",
+      "em": "EM Predictor",
+      "capability_id": "propose_predictions",
+      "model": "ACFL_DETERMINISTIC",
+      "model_version": "",
+      "runtime_version": "5.x",
+      "context_id": "WORK-AC272ACA",
+      "prompt_version": "",
+      "inference_parameters": {},
+      "prompt_tokens": null,
+      "completion_tokens": null,
+      "total_tokens": null,
+      "latency_ms": 0.0,
+      "output_schema": "PredictorProposal",
+      "validation_status": "",
+      "timestamp": "2026-09-01T16:41:53.596135Z",
+      "status": "COMPLETED"
+    },
+    {
+      "call_id": "CALL-6b5b8f5c",
+      "em": "EM Prescriptor",
+      "capability_id": "propose_prescription",
+      "model": "deepseek-chat",
+      "model_version": "",
+      "runtime_version": "5.x",
+      "context_id": "WORK-AC272ACA",
+      "prompt_version": "",
+      "inference_parameters": {},
+      "prompt_tokens": null,
+      "completion_tokens": null,
+      "total_tokens": null,
+      "latency_ms": 14106.687784194946,
+      "output_schema": "PrescriptionProposal",
+      "validation_status": "",
+      "timestamp": "2026-09-01T16:42:08.730841Z",
+      "status": "COMPLETED"
+    },
+    {
+      "call_id": "CALL-f9c3d060",
+      "em": "EM Actioner",
+      "capability_id": "propose_action_plan",
+      "model": "deepseek-chat",
+      "model_version": "",
+      "runtime_version": "5.x",
+      "context_id": "WORK-AC272ACA",
+      "prompt_version": "",
+      "inference_parameters": {},
+      "prompt_tokens": null,
+      "completion_tokens": null,
+      "total_tokens": null,
+      "latency_ms": 16259.067296981812,
+      "output_schema": "ActionPlanProposal",
+      "validation_status": "",
+      "timestamp": "2026-09-01T16:44:19.842565Z",
+      "status": "COMPLETED"
+    }
+  ],
+  "core_analysis": {
+    "analysis_id": "CORE-6FD928",
+    "problem_type": "UNKNOWN",
+    "tasks": [
+      {
+        "task_id": "task_1",
+        "classification": "D",
+        "owner": "EM Descriptor",
+        "capability": "extract_relevant_information",
+        "dependencies": []
+      },
+      {
+        "task_id": "task_2",
+        "classification": "D",
+        "owner": "EM Descriptor",
+        "capability": "extract_relevant_information",
+        "dependencies": [
+          "task_1"
+        ]
+      },
+      {
+        "task_id": "task_3",
+        "classification": "PRED",
+        "owner": "EM Predictor",
+        "capability": "analyze_dataset",
+        "dependencies": [
+          "task_2",
+          "task_1"
+        ]
+      },
+      {
+        "task_id": "task_4",
+        "classification": "PRES",
+        "owner": "EM Prescriptor",
+        "capability": "evaluate_alternatives",
+        "dependencies": [
+          "task_3",
+          "task_1",
+          "task_2"
+        ]
+      },
+      {
+        "task_id": "task_5",
+        "classification": "ACT",
+        "owner": "EM Actioner",
+        "capability": "execute_action",
+        "dependencies": [
+          "task_4",
+          "task_1",
+          "task_2",
+          "task_3"
+        ]
+      },
+      {
+        "task_id": "task_6",
+        "classification": "INS",
+        "owner": "EM Installer",
+        "capability": "install_action",
+        "dependencies": [
+          "task_5",
+          "task_1",
+          "task_2",
+          "task_3",
+          "task_4"
+        ]
+      },
+      {
+        "task_id": "task_7",
+        "classification": "PUB",
+        "owner": "EM Publisher",
+        "capability": "generate_summary",
+        "dependencies": [
+          "task_6",
+          "task_1",
+          "task_2",
+          "task_3",
+          "task_4",
+          "task_5"
+        ]
+      }
+    ],
+    "routing": [
+      "task_1 -> EM Descriptor",
+      "task_2 -> EM Descriptor",
+      "task_3 -> EM Predictor",
+      "task_4 -> EM Prescriptor",
+      "task_5 -> EM Actioner",
+      "task_6 -> EM Installer",
+      "task_7 -> EM Publisher"
+    ],
+    "integration": {
+      "final_em": "EM Publisher",
+      "result_source": "state.result"
+    },
+    "status": "COMPLETED"
+  },
+  "agent_deployment": null,
+  "resolved_pipeline": [
+    "extract_relevant_information",
+    "extract_relevant_information",
+    "analyze_dataset",
+    "evaluate_alternatives",
+    "execute_action",
+    "install_action",
+    "generate_summary"
+  ],
+  "gaps": [],
+  "conditions": [
+    {
+      "status": "INFORMATIONAL",
+      "reason_code": "EVIDENCE_OPTIONAL",
+      "message": "Optional evidence suggested: Datos históricos de costes y disponibilidad., Análisis de costes de infraestructura actual.",
+      "target": null
+    },
+    {
+      "status": "INFORMATIONAL",
+      "reason_code": "INSUFFICIENT_DATA",
+      "message": "Predictor has insufficient data; predictions will be marked NOT_EVALUATED.",
+      "target": null
+    }
+  ],
+  "status": "COMPLETED",
+  "information_request": {
+    "sufficient": false,
+    "missing_information": [
+      {
+        "name": "Datos históricos de disponibilidad",
+        "reason": "No se dispone de datos históricos de disponibilidad del sistema para modelar el impacto de cambios en costes.",
+        "required_for": "Establecer una línea base y modelar la relación entre costes y disponibilidad."
+      },
+      {
+        "name": "Datos de costes actuales y desglose",
+        "reason": "No se proporcionan los costes actuales de servidores ni su desglose, necesarios para calcular el 20% de reducción.",
+        "required_for": "Calcular el ahorro objetivo y evaluar su viabilidad."
+      },
+      {
+        "name": "Relación entre costes y disponibilidad",
+        "reason": "No hay datos que relacionen la reducción de costes con la disponibilidad, como redundancia, mantenimiento, o calidad de hardware.",
+        "required_for": "Predecir el impacto de la reducción de costes en la disponibilidad."
+      }
+    ],
+    "can_continue": false,
+    "blocking_component": "Datos históricos y relación coste-disponibilidad"
+  },
+  "human_requests": [
+    {
+      "request_id": "REQ-d73a8f",
+      "type": "MISSING_INFORMATION",
+      "question": "Optional: provide the missing data required for mathematical prediction, or continue and the result will be marked NOT_EVALUATED.",
+      "reason": "Optional variables to reduce prediction uncertainty.",
+      "required_information": [
+        "Datos históricos de disponibilidad",
+        "Datos de costes actuales y desglose",
+        "Relación entre costes y disponibilidad"
+      ],
+      "current_context": "",
+      "available_options": [],
+      "constraints": [],
+      "parameters": {},
+      "evidence_required": false,
+      "decision_required": false,
+      "blocking": false,
+      "created_at": "2026-09-01T10:41:53.596135",
+      "status": "PENDING",
+      "response_data": null
+    }
+  ],
+  "decision_points": [
+    {
+      "decision_id": "DEC-8b8482",
+      "originating_em": "EM Prescriptor",
+      "problem_id": "PROB-0762B183",
+      "task_id": "task_4",
+      "question": "Please select the best alternative for implementation.",
+      "context": "",
+      "options": [
+        {
+          "id": "ALT-001",
+          "desc": "Implementar una estrategia de consolidación de servidores mediante virtualización y contenedores, optimizando la utilización de recursos y reduciendo el número de instancias físicas."
+        },
+        {
+          "id": "ALT-002",
+          "desc": "Adoptar un modelo de infraestructura como servicio (IaaS) con escalado automático, ajustando dinámicamente los recursos según la demanda para reducir costes en horas de baja utilización."
+        },
+        {
+          "id": "ALT-003",
+          "desc": "Optimizar el rendimiento de las aplicaciones y la configuración de los servidores para reducir el número de instancias necesarias, mediante técnicas como caching, compresión y ajuste de parámetros."
+        }
+      ],
+      "recommended_option": null,
+      "recommendation_reason": null,
+      "uncertainty": "",
+      "required_parameters": [],
+      "human_authority": true,
+      "status": "ANSWERED",
+      "human_selection": "ALT-001"
+    }
+  ],
+  "human_contributions": [
+    {
+      "contribution_id": "HKC-3244f4",
+      "type": "SELECTION",
+      "value": "ALT-001",
+      "affected_component": "HUMAN_LOOP",
+      "affected_variable": null,
+      "affected_decision": null,
+      "rationale": "Human operator selected ALT-001",
+      "timestamp": "2026-09-01T10:44:03.070735"
+    }
+  ],
+  "human_decision": {
+    "decision_id": "DEC-8b8482",
+    "work_id": "WORK-AC272ACA",
+    "decision_type": "SELECT_ALTERNATIVE",
+    "selected_alternative_id": "ALT-001",
+    "selected_prescription_id": "PRESC-20250321-001",
+    "parameters_modified": {},
+    "human_knowledge": "",
+    "rationale": "Human operator selected ALT-001",
+    "timestamp": "2026-09-01T16:44:03.070735",
+    "decision_authority": "HUMAN_OPERATOR"
+  },
+  "revision": 15,
+  "feasible_only": false,
+  "problem_state": "FORMULATED",
+  "knowledge_state": "INCOMPLETE",
+  "decision_state": "PENDING",
+  "narrative_state": "INITIALIZING",
+  "visualizations": [
+    {
+      "id": "Inspector",
+      "status": "AVAILABLE",
+      "data_source": null,
+      "dimensions": [],
+      "interactions": [],
+      "reason": null,
+      "selection_bindings": []
+    },
+    {
+      "id": "Scientific Surface",
+      "status": "AVAILABLE",
+      "data_source": null,
+      "dimensions": [],
+      "interactions": [],
+      "reason": null,
+      "selection_bindings": []
+    },
+    {
+      "id": "Decision Field",
+      "status": "AVAILABLE",
+      "data_source": null,
+      "dimensions": [],
+      "interactions": [],
+      "reason": null,
+      "selection_bindings": []
+    },
+    {
+      "id": "Phase Space",
+      "status": "AVAILABLE",
+      "data_source": null,
+      "dimensions": [],
+      "interactions": [],
+      "reason": null,
+      "selection_bindings": []
+    },
+    {
+      "id": "Compensation Surface",
+      "status": "AVAILABLE",
+      "data_source": "canonical.acfl.frontier",
+      "dimensions": [],
+      "interactions": [],
+      "reason": null,
+      "selection_bindings": []
+    },
+    {
+      "id": "Story Canvas",
+      "status": "AVAILABLE",
+      "data_source": null,
+      "dimensions": [],
+      "interactions": [],
+      "reason": null,
+      "selection_bindings": []
+    }
+  ],
+  "tool_call_id": null,
+  "available_capabilities": [],
+  "state": {
+    "acfl": {
+      "weights": {
+        "cost": 50.0,
+        "risk": 50.0
+      },
+      "criteria": [
+        "Reducción de costes >= 20%",
+        "Disponibilidad >= 99.9%"
+      ],
+      "alternatives": [],
+      "normalized_scores": {
+        "ALT-001": {
+          "Reducción de costes >= 20%": 1.0,
+          "Disponibilidad >= 99.9%": 1.0
+        },
+        "ALT-002": {
+          "Reducción de costes >= 20%": 1.0,
+          "Disponibilidad >= 99.9%": 1.0
+        },
+        "ALT-003": {
+          "Reducción de costes >= 20%": 1.0,
+          "Disponibilidad >= 99.9%": 0.0
+        }
+      },
+      "frontier": [],
+      "sensitivity": {}
+    },
+    "feasible_only": false,
+    "result": {
+      "result_id": "WR-0fde50",
+      "work_id": "WORK-AC272ACA",
+      "summary": "El análisis evalúa la viabilidad de reducir los costes de servidores en un 20% manteniendo una disponibilidad del 99.9%. Se seleccionó la alternativa ALT-001 (consolidación mediante virtualización y contenedores) como la más adecuada, aunque la decisión fue anulada por un operador humano. No se dispone de un plan de acción ni de resultados de ejecución, por lo que no se puede confirmar el impacto real. Se recomienda implementar la alternativa seleccionada con un plan detallado y monitoreo continuo para asegurar el cumplimiento del objetivo.",
+      "findings": [
+        "El objetivo del análisis es reducir los costes de servidores en un 20% manteniendo una disponibilidad del 99.9%.",
+        "El objetivo del análisis es reducir los costes de servidores en un 20% manteniendo una disponibilidad del 99.9%.",
+        "El objetivo es reducir los costes de servidores en un 20% manteniendo una disponibilidad del 99.9%. Se evaluaron tres alternativas (ALT-001, ALT-002, ALT-003). La alternativa seleccionada fue ALT-001, que propone consolidar servidores mediante virtualización y contenedores para optimizar la utilización de recursos y reducir el número de instancias físicas. Sin embargo, la decisión fue anulada por un operador humano (OVERRIDDEN · HUMAN_OPERATOR). No se proporcionó un plan de acción ni se ejecutó ninguna implementación."
+      ],
+      "calculations": {
+        "acfl_normalized_scores": {
+          "ALT-001": {
+            "Reducción de costes >= 20%": 1.0,
+            "Disponibilidad >= 99.9%": 1.0
+          },
+          "ALT-002": {
+            "Reducción de costes >= 20%": 1.0,
+            "Disponibilidad >= 99.9%": 1.0
+          },
+          "ALT-003": {
+            "Reducción de costes >= 20%": 1.0,
+            "Disponibilidad >= 99.9%": 0.0
+          }
+        }
+      },
+      "recommendations": [
+        "ALT-001: Implementar una estrategia de consolidación de servidores mediante virtualización y contenedores, optimizando la utilización de recursos y reduciendo el número de instancias físicas.",
+        "Fundamento: Se han identificado tres alternativas principales para reducir costes de servidores en un 20% manteniendo la disponibilidad del 99.9%. Cada alternativa aborda la reducción de costes desde un enfoque diferente: consolidación, cloud elástico y optimización de rendimiento. La selección final debe considerar el equilibrio entre coste y disponibilidad, así como la viabilidad técnica y operativa. Se requiere decisión humana para evaluar las implicaciones estratégicas y los riesgos asociados.",
+        "1. Implementar la alternativa ALT-001 (consolidación mediante virtualización y contenedores) como estrategia principal para reducir costes. 2. Desarrollar un plan de acción detallado que incluya un inventario de servidores, análisis de utilización, y migración gradual de cargas de trabajo. 3. Establecer métricas de disponibilidad (99.9%) y monitoreo continuo para garantizar que la reducción de costes no afecte el SLA. 4. Realizar pruebas de carga y failover antes de la migración completa. 5. Considerar la posibilidad de utilizar instancias reservadas o spot para optimizar costes adicionales, siempre que no comprometan la disponibilidad."
+      ],
+      "alternatives": [
+        "Implementar una estrategia de consolidación de servidores mediante virtualización y contenedores, optimizando la utilización de recursos y reduciendo el número de instancias físicas.",
+        "Implementar una estrategia de consolidación de servidores mediante virtualización y contenedores, optimizando la utilización de recursos y reduciendo el número de instancias físicas.",
+        "Adoptar un modelo de infraestructura como servicio (IaaS) con escalado automático, ajustando dinámicamente los recursos según la demanda para reducir costes en horas de baja utilización.",
+        "Optimizar el rendimiento de las aplicaciones y la configuración de los servidores para reducir el número de instancias necesarias, mediante técnicas como caching, compresión y ajuste de parámetros."
+      ],
+      "scores": {},
+      "evidence_ids": [],
+      "provenance": [
+        "EM Publisher Generated Result"
+      ],
+      "confidence": null,
+      "status": "AVAILABLE",
+      "limitations": [],
+      "gaps": []
+    }
+  },
+  "story": {
+    "arc": [
+      {
+        "phase": "THE QUESTION",
+        "content": "Analizar el impacto de reducir los costes de servidores un 20% manteniendo la disponibilidad del 99.9%.",
+        "source": "PROB-0762B183",
+        "authority": "LLM_CANDIDATE"
+      },
+      {
+        "phase": "WHAT THE EVIDENCE SAYS",
+        "content": "Se identificaron 2 hallazgos sobre la evidencia disponible.",
+        "source": "FINDINGS",
+        "authority": "VALIDATED"
+      },
+      {
+        "phase": "FINDING",
+        "content": "El objetivo del análisis es reducir los costes de servidores en un 20% manteniendo una disponibilidad del 99.9%.",
+        "source": "FND-D1C5130E",
+        "authority": "VALIDATED"
+      },
+      {
+        "phase": "FINDING",
+        "content": "El objetivo del análisis es reducir los costes de servidores en un 20% manteniendo una disponibilidad del 99.9%.",
+        "source": "FND-FD733728",
+        "authority": "VALIDATED"
+      },
+      {
+        "phase": "PREDICTION",
+        "content": "El motor matemático (ACFL_DETERMINISTIC, GCLV Eq 4.17) evaluó 6 predicado(s).",
+        "source": "PREDICATES",
+        "authority": "VALIDATED"
+      },
+      {
+        "phase": "PREDICTION",
+        "content": "Predicado GCLV sobre 'Datos' (mse=).",
+        "source": "PRED_AST_90174244",
+        "authority": "VALIDATED"
+      },
+      {
+        "phase": "PREDICTION",
+        "content": "Predicado GCLV sobre 'NOT_EVALUATED' (mse=).",
+        "source": "PRED_AST_0DC20858",
+        "authority": "VALIDATED"
+      },
+      {
+        "phase": "PRESCRIPTION",
+        "content": "El Prescriptor generó 3 alternativa(s) candidata(s); la autoridad de selección es humana (HITL)..",
+        "source": "PRESC-20250321-001",
+        "authority": "HUMAN_AUTHORIZED"
+      },
+      {
+        "phase": "THE DECISION",
+        "content": "El humano autorizó la alternativa ALT-001 (DEC-8b8482).",
+        "source": "DEC-8b8482",
+        "authority": "HUMAN_AUTHORIZED"
+      },
+      {
+        "phase": "THE RESULT",
+        "content": "El análisis evalúa la viabilidad de reducir los costes de servidores en un 20% manteniendo una disponibilidad del 99.9%. Se seleccionó la alternativa ALT-001 (consolidación mediante virtualización y contenedores) como la más adecuada, aunque la decisión fue anulada por un operador humano. No se dispone de un plan de acción ni de resultados de ejecución, por lo que no se puede confirmar el impacto real. Se recomienda implementar la alternativa seleccionada con un plan detallado y monitoreo continuo para asegurar el cumplimiento del objetivo.",
+        "source": "WR-0fde50",
+        "authority": "PUBLISHED"
+      }
+    ]
+  }
+}

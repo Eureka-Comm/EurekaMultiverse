@@ -1,0 +1,463 @@
+/* ============================================================================
+   EUREKA — SPATIAL COGNITIVE INSTRUMENT (visual system v2)
+   ----------------------------------------------------------------------------
+   This is NOT a card grid. It is a cognitive surface / scientific instrument
+   where cognition moves along a thread through a coordinate plane.
+
+   Design laws:
+     · white/minimal/scientific/teal identity preserved (--eureka-* tokens)
+     · thin 1px hairlines + fine spatial grid + registration marks (+ crosshairs)
+     · mono ids, small-caps micro labels, display type for the cognitive content
+     · minimal border radius (0–3px) — precise geometry, not rounded cards
+     · one primary hero per chapter; everything else is contextual
+     · focus = illumination (radial glow + trajectory lighting), dim = de-emphasis
+   ========================================================================== */
+
+.ci-root {
+  display: flex;
+  flex-direction: column;
+  min-height: 560px;
+  height: auto;
+  position: relative;
+  padding: 0 2px 2px;
+}
+
+/* ---- spatial canvas background (fine grid + registration frame) ----------- */
+.ci-canvas {
+  position: relative;
+  background:
+    linear-gradient(to right, var(--eureka-spatial-grid) 1px, transparent 1px),
+    linear-gradient(to bottom, var(--eureka-spatial-grid) 1px, transparent 1px),
+    var(--eureka-surface);
+  background-size: 24px 24px, 24px 24px, auto;
+  border: 1px solid var(--eureka-spatial-hairline);
+}
+
+/* registration corner frames + center crosshair marks (the "instrument" feel) */
+.ci-canvas::before {
+  content: "";
+  position: absolute; inset: 0; pointer-events: none;
+  background-image:
+    /* top ruler ticks */
+    repeating-linear-gradient(to right, var(--eureka-spatial-grid) 0 1px, transparent 1px 24px),
+    /* left ruler ticks */
+    repeating-linear-gradient(to bottom, var(--eureka-spatial-grid) 0 1px, transparent 1px 24px);
+  background-size: 96px 8px, 8px 96px;
+  background-position: 12px 4px, 4px 12px;
+  opacity: 0.65;
+}
+
+/* registration crosshairs at the panel corners */
+.ci-reg-plus {
+  position: absolute; width: 12px; height: 12px; pointer-events: none; opacity: 0.5; z-index: 3;
+}
+.ci-reg-plus::before, .ci-reg-plus::after {
+  content: ""; position: absolute; background: var(--eureka-text-technical);
+}
+.ci-reg-plus::before { left: 50%; top: 0; width: 1px; height: 100%; transform: translateX(-50%); }
+.ci-reg-plus::after { top: 50%; left: 0; height: 1px; width: 100%; transform: translateY(-50%); }
+.ci-reg-plus.tl { top: 5px; left: 5px; }
+.ci-reg-plus.tr { top: 5px; right: 5px; }
+.ci-reg-plus.bl { bottom: 5px; left: 5px; }
+.ci-reg-plus.br { bottom: 5px; right: 5px; }
+
+/* ---- instrument header ---------------------------------------------------- */
+.ci-header {
+  display: flex; align-items: baseline; justify-content: space-between; gap: 16px;
+  padding: 4px 2px 10px; flex-wrap: wrap;
+}
+.ci-title {
+  font-family: var(--font-display); font-weight: 600; font-size: 14px;
+  color: var(--eureka-text-display); letter-spacing: .01em; display: flex; align-items: baseline; gap: 12px;
+}
+.ci-title .ci-sub { font-family: var(--font-mono); font-size: 9.5px; font-weight: 400; color: var(--eureka-text-micro); letter-spacing: .02em; }
+.ci-title .ci-title-rule { width: 34px; height: 1px; background: var(--eureka-signal-cognitive); display: inline-block; align-self: center; }
+
+/* ---- CHAPTER TRAJECTORY (a cognitive timeline, NOT tabs) ------------------ */
+.ci-trajectory {
+  position: relative;
+  display: flex; align-items: flex-start; gap: 0;
+  padding: 6px 4px 14px;
+  border-bottom: 1px solid var(--eureka-spatial-hairline);
+  margin-bottom: 14px;
+  overflow-x: auto;
+}
+/* the trajectory thread (the base rail the cognition travels along) */
+.ci-trajectory::before {
+  content: ""; position: absolute; left: 18px; right: 18px; top: 24px; height: 1px;
+  background: linear-gradient(to right, transparent, var(--eureka-spatial-hairline) 6%, var(--eureka-spatial-hairline) 94%, transparent);
+  z-index: 0;
+}
+.ci-trajectory-progress {
+  position: absolute; left: 18px; top: 24px; height: 1px; z-index: 0;
+  background: linear-gradient(to right, var(--eureka-signal-cognitive), color-mix(in srgb, var(--eureka-signal-cognitive) 40%, transparent));
+  transition: width .4s cubic-bezier(.2,.8,.2,1);
+}
+.ci-traj-node {
+  position: relative; z-index: 1;
+  display: inline-flex; flex-direction: column; align-items: flex-start; gap: 7px;
+  background: transparent; border: 0; cursor: pointer;
+  padding: 2px 10px 0 2px; min-width: 92px; text-align: left;
+}
+.ci-traj-node:last-child { padding-right: 0; }
+.ci-traj-head { display: flex; align-items: center; gap: 7px; }
+.ci-traj-dot {
+  width: 13px; height: 13px; border-radius: 50%;
+  border: 1.5px solid var(--eureka-text-technical);
+  background: var(--eureka-surface);
+  position: relative; flex: 0 0 auto;
+  transition: border-color .2s ease, box-shadow .2s ease, background .2s ease;
+}
+.ci-traj-dot::after {
+  content: ""; position: absolute; inset: 3px; border-radius: 50%;
+  background: transparent; transition: background .2s ease;
+}
+.ci-traj-node.is-live .ci-traj-dot { border-color: var(--eureka-signal-cognitive); }
+.ci-traj-node.is-live .ci-traj-dot::after { background: var(--eureka-signal-cognitive); }
+.ci-traj-node.is-idle .ci-traj-dot { border-color: color-mix(in srgb, var(--eureka-signal-cognitive) 55%, transparent); }
+.ci-traj-node.is-idle .ci-traj-dot::after { background: color-mix(in srgb, var(--eureka-signal-cognitive) 35%, transparent); }
+.ci-traj-node.is-empty .ci-traj-dot { border-style: dashed; border-color: var(--eureka-text-technical); opacity: .5; }
+.ci-traj-node.is-active .ci-traj-dot {
+  border-color: var(--eureka-signal-cognitive);
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--eureka-signal-cognitive) 18%, transparent);
+}
+.ci-traj-num {
+  font-family: var(--font-mono); font-size: 9px; font-weight: 700;
+  color: var(--eureka-text-technical); letter-spacing: .05em;
+}
+.ci-traj-node.is-active .ci-traj-num { color: var(--eureka-signal-cognitive); }
+.ci-traj-label {
+  font-family: var(--font-mono); font-size: 9px; font-weight: 600;
+  text-transform: uppercase; letter-spacing: .08em; color: var(--eureka-text-label);
+  white-space: nowrap;
+}
+.ci-traj-node.is-active .ci-traj-label { color: var(--eureka-text-display); }
+.ci-traj-count {
+  font-family: var(--font-mono); font-size: 8px; color: var(--eureka-text-micro);
+  border: 1px solid var(--eureka-spatial-hairline); border-radius: 2px; padding: 0 3px; line-height: 1.3;
+}
+
+/* ---- MAIN GRID: primary stage + contextual inspector ---------------------- */
+.ci-body {
+  display: grid; gap: 14px; flex: 1 1 auto; min-height: 0;
+  grid-template-columns: minmax(0, 1fr);
+  transition: grid-template-columns .3s cubic-bezier(.2,.8,.2,1);
+}
+.ci-body.has-inspector { grid-template-columns: minmax(0, 1fr) 380px; }
+
+/* ---- STAGE: the spatial field where the hero cognition lives -------------- */
+.ci-stage {
+  position: relative; min-height: 0; min-width: 0;
+  display: flex; flex-direction: column;
+  border: 1px solid var(--eureka-spatial-hairline);
+  background: var(--eureka-surface);
+  overflow: hidden;
+}
+.ci-stage::before {
+  content: ""; position: absolute; inset: 0; pointer-events: none; opacity: .35;
+  background:
+    linear-gradient(to right, var(--eureka-spatial-grid) 1px, transparent 1px),
+    linear-gradient(to bottom, var(--eureka-spatial-grid) 1px, transparent 1px);
+  background-size: 26px 26px, 26px 26px;
+}
+/* stage coordinates readout (instrument HUD, top-left) */
+.ci-stage-coord {
+  position: absolute; top: 8px; left: 12px; z-index: 4;
+  font-family: var(--font-mono); font-size: 8px; letter-spacing: .06em;
+  color: var(--eureka-text-micro); pointer-events: none;
+}
+.ci-stage-scroll {
+  flex: 1 1 auto; min-height: 0; overflow: auto;
+  padding: 30px 26px 22px; position: relative; z-index: 1;
+}
+
+/* ---- INSPECTOR rail ------------------------------------------------------- */
+.ci-inspector-rail {
+  min-height: 0; min-width: 0; overflow: hidden;
+  border: 1px solid var(--eureka-spatial-hairline);
+  background: var(--eureka-surface);
+  display: flex; flex-direction: column;
+  position: relative;
+}
+.ci-inspector-scroll { flex: 1 1 auto; min-height: 0; overflow: auto; padding: 16px 16px 20px; }
+
+/* ---- HERO (primary cognitive view) --------------------------------------- */
+.ci-hero { display: flex; flex-direction: column; min-height: 100%; gap: 18px; position: relative; }
+.ci-hero-head {
+  display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; flex-wrap: wrap;
+  padding-bottom: 2px;
+}
+.ci-kicker {
+  display: inline-flex; align-items: center; gap: 10px;
+  font-family: var(--font-display); font-weight: 600; font-size: 13px;
+  color: var(--eureka-text-display); text-transform: uppercase; letter-spacing: .04em;
+}
+.ci-kicker .ci-kick-num {
+  font-family: var(--font-mono); font-size: 10px; font-weight: 700; color: var(--eureka-text-display);
+  border: 1px solid var(--eureka-spatial-hairline); padding: 1px 5px; line-height: 1.2; border-radius: 2px;
+}
+.ci-kicker .ci-kick-sub {
+  font-family: var(--font-mono); font-size: 9px; font-weight: 400; color: var(--eureka-text-micro);
+  text-transform: none; letter-spacing: 0;
+}
+
+.ci-micro-row { display: flex; flex-wrap: wrap; gap: 8px; }
+
+/* ---- Reusable field ------------------------------------------------------ */
+.ci-field { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.ci-field-label {
+  font-family: var(--font-mono); font-size: 9px; font-weight: 500;
+  text-transform: uppercase; letter-spacing: .08em; color: var(--eureka-text-label);
+}
+.ci-field-value { font-size: 12.5px; color: var(--eureka-text-section); line-height: 1.45; }
+.ci-field-value.mono { font-family: var(--font-mono); font-size: 11.5px; }
+
+/* ---- Technical panel (thin hairline), replaces the "card" ----------------- */
+.ci-panel {
+  border: 1px solid var(--eureka-spatial-hairline);
+  background: var(--eureka-surface);
+  position: relative;
+}
+.ci-panel::before {
+  content: ""; position: absolute; top: 8px; left: -1px; width: 2px; height: 14px;
+  background: var(--eureka-signal-cognitive); opacity: .0; transition: opacity .2s ease;
+}
+.ci-panel.is-em { border-left: 2px solid var(--eureka-signal-cognitive); }
+.ci-panel-title {
+  display: flex; align-items: center; gap: 8px;
+  font-family: var(--font-mono); font-size: 9px; font-weight: 600;
+  text-transform: uppercase; letter-spacing: .1em; color: var(--eureka-text-label);
+  padding: 9px 12px; border-bottom: 1px solid var(--eureka-spatial-hairline);
+}
+
+/* ---- COGNITIVE EXECUTION PATH (action plan as a sequence 01..0N) ---------- */
+.ci-path { display: flex; flex-direction: column; gap: 0; position: relative; }
+.ci-path-node {
+  display: flex; align-items: stretch; gap: 14px; position: relative;
+  min-height: 54px;
+}
+/* the vertical rail through the path nodes */
+.ci-path-node::before {
+  content: ""; position: absolute; left: 15px; top: 32px; bottom: -2px; width: 1px;
+  background: var(--eureka-spatial-hairline);
+}
+.ci-path-node:last-child::before { display: none; }
+.ci-path-node.is-running::before { background: linear-gradient(var(--eureka-signal-cognitive), var(--eureka-spatial-hairline)); }
+.ci-path-marker {
+  width: 31px; flex: 0 0 auto; display: flex; justify-content: flex-start; padding-top: 10px; position: relative; z-index: 1;
+}
+.ci-path-marker span {
+  font-family: var(--font-mono); font-size: 9px; font-weight: 700;
+  color: var(--eureka-text-technical); border: 1px solid var(--eureka-spatial-hairline);
+  background: var(--eureka-surface); width: 22px; height: 22px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center; transition: all .2s ease;
+}
+.ci-path-node.is-completed .ci-path-marker span { color: #fff; background: var(--eureka-signal-action); border-color: var(--eureka-signal-action); }
+.ci-path-node.is-running .ci-path-marker span { color: #fff; background: var(--eureka-signal-cognitive); border-color: var(--eureka-signal-cognitive); }
+.ci-path-node.is-failed .ci-path-marker span { color: #fff; background: var(--eureka-signal-blocked); border-color: var(--eureka-signal-blocked); }
+.ci-path-node.is-pending .ci-path-marker span { color: var(--eureka-text-technical); }
+.ci-path-body {
+  flex: 1 1 auto; min-width: 0; padding: 8px 0 14px;
+  border-bottom: 1px solid var(--eureka-spatial-grid);
+}
+.ci-path-node:last-child .ci-path-body { border-bottom: 0; }
+.ci-path-head { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; }
+.ci-path-id { font-family: var(--font-mono); font-size: 10.5px; font-weight: 700; color: var(--eureka-text-display); }
+.ci-path-owner { font-family: var(--font-mono); font-size: 9px; color: var(--eureka-text-micro); }
+.ci-path-state {
+  margin-left: auto; font-family: var(--font-mono); font-size: 8.5px; text-transform: uppercase; letter-spacing: .06em;
+  display: inline-flex; align-items: center; gap: 5px;
+}
+.ci-path-state::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
+.ci-path-desc { font-size: 11.5px; color: var(--eureka-text-section); line-height: 1.5; margin-top: 4px; }
+
+/* ---- RESULT MOMENT (destination / outcome field) -------------------------- */
+.ci-moment {
+  position: relative; overflow: hidden;
+  border: 1px solid color-mix(in srgb, var(--eureka-signal-action) 45%, var(--eureka-spatial-hairline));
+  background:
+    radial-gradient(120% 120% at 85% -20%, color-mix(in srgb, var(--eureka-signal-action) 10%, transparent), transparent 55%),
+    var(--eureka-surface);
+  padding: 20px 22px;
+}
+.ci-moment::after {
+  content: ""; position: absolute; top: 8px; right: 10px; width: 9px; height: 9px;
+  border: 1px solid var(--eureka-signal-action); transform: rotate(45deg); opacity: .5;
+}
+.ci-moment-label {
+  font-family: var(--font-mono); font-size: 9px; font-weight: 700; letter-spacing: .14em;
+  text-transform: uppercase; color: var(--eureka-signal-action); margin-bottom: 8px;
+}
+.ci-moment-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px 22px; }
+.ci-moment-cell .ci-field-label { color: var(--eureka-text-label); }
+.ci-moment-cell .ci-moment-val { font-family: var(--font-mono); font-size: 13px; color: var(--eureka-text-display); font-weight: 600; }
+.ci-moment-summary { font-size: 14px; line-height: 1.6; color: var(--eureka-text-display); margin-top: 8px; white-space: pre-wrap; }
+
+/* ---- LINEAGE THREAD (single cognitve thread, not a card row) -------------- */
+.ci-thread {
+  position: relative; border: 1px solid var(--eureka-spatial-hairline); background: var(--eureka-surface);
+  margin-top: 14px; overflow: hidden;
+}
+.ci-thread-rail { position: relative; padding: 18px 20px 16px; overflow-x: auto; }
+.ci-thread-line {
+  position: absolute; left: 24px; right: 24px; top: 26px; height: 1px;
+  background: var(--eureka-spatial-hairline);
+}
+.ci-thread-stage { position: relative; display: flex; align-items: center; gap: 0; min-width: max-content; }
+.ci-thread-step { position: relative; display: flex; align-items: center; }
+.ci-thread-node {
+  position: relative; z-index: 1; display: flex; flex-direction: column; align-items: flex-start; gap: 3px;
+  background: transparent; border: 0; cursor: pointer; padding: 0 0 0 0; min-width: 96px; max-width: 150px; text-align: left;
+}
+.ci-thread-dot {
+  position: relative; width: 12px; height: 12px; border-radius: 50%;
+  border: 1.5px solid var(--eureka-text-technical); background: var(--eureka-surface);
+  transition: all .2s ease;
+}
+.ci-thread-node.is-active .ci-thread-dot {
+  border-color: var(--eureka-signal-cognitive);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--eureka-signal-cognitive) 22%, transparent);
+}
+.ci-thread-node.is-gap .ci-thread-dot { border-style: dashed; opacity: .45; }
+.ci-thread-meta { margin-top: 6px; }
+.ci-thread-kind { font-family: var(--font-mono); font-size: 8px; text-transform: uppercase; letter-spacing: .06em; color: var(--eureka-text-micro); }
+.ci-thread-id { font-family: var(--font-mono); font-size: 10.5px; font-weight: 700; color: var(--eureka-text-display); }
+.ci-thread-sep {
+  position: relative; z-index: 1; width: 26px; display: flex; align-items: center; justify-content: center;
+  color: var(--eureka-text-technical); font-size: 10px;
+}
+.ci-thread-sep::before { content: ""; width: 100%; height: 1px; background: var(--eureka-spatial-hairline); position: absolute; }
+.ci-thread-sep span { position: relative; background: var(--eureka-surface); padding: 0 4px; }
+
+/* ---- Legend -------------------------------------------------------------- */
+.ci-legend { display: flex; flex-wrap: wrap; gap: 10px; }
+.ci-legend-item {
+  display: inline-flex; align-items: center; gap: 6px; font-family: var(--font-mono);
+  font-size: 9px; color: var(--eureka-text-label); text-transform: uppercase; letter-spacing: .04em;
+}
+.ci-legend-dot { width: 9px; height: 9px; border-radius: 50%; border: 1px solid currentColor; }
+
+/* ---- Small helper chips -------------------------------------------------- */
+.ci-tag { display: inline-flex; align-items: center; gap: 6px; font-size: 9px; font-family: var(--font-mono); text-transform: uppercase; letter-spacing: .05em; }
+.ci-divider { border: 0; border-top: 1px solid var(--eureka-spatial-hairline); margin: 10px 0; }
+
+/* ---- Empty / honest state ------------------------------------------------- */
+.ci-empty {
+  display: flex; flex-direction: column; gap: 6px; align-items: center; justify-content: center;
+  min-height: 240px; text-align: center; color: var(--eureka-text-label);
+}
+.ci-honest {
+  position: relative; border: 1px dashed color-mix(in srgb, var(--eureka-signal-ranking) 55%, transparent);
+  background: color-mix(in srgb, var(--eureka-signal-ranking) 5%, var(--eureka-surface));
+  padding: 14px 16px;
+}
+.ci-honest-label {
+  font-family: var(--font-mono); font-size: 9.5px; font-weight: 700; letter-spacing: .1em;
+  text-transform: uppercase; color: var(--eureka-signal-ranking); margin-bottom: 6px;
+}
+
+/* ---- COGNITIVE COMMAND CENTER (Chat — the primary surface) --------------- */
+.ci-command { display: flex; flex-direction: column; gap: 0; width: 100%; }
+.ci-command-head {
+  display: flex; align-items: baseline; justify-content: space-between; gap: 12px;
+  padding: 2px 2px 12px; margin-bottom: 4px; border-bottom: 1px solid var(--eureka-spatial-hairline);
+}
+.ci-command-title {
+  font-family: var(--font-display); font-weight: 600; font-size: 15px; color: var(--eureka-text-display);
+  display: flex; align-items: baseline; gap: 12px; letter-spacing: .01em;
+}
+.ci-command-title .ci-sub { font-family: var(--font-mono); font-size: 9.5px; font-weight: 400; color: var(--eureka-text-micro); }
+.ci-command-body { display: flex; flex-direction: column; gap: 0; }
+
+/* cognition axis: numbered left ruler driving progressive disclosure */
+.ci-command-axis { display: flex; gap: 0; }
+.ci-axis-num {
+  font-family: var(--font-mono); font-size: 12px; font-weight: 700; color: var(--eureka-signal-cognitive);
+  padding-top: 16px; line-height: 1; width: 34px; flex: 0 0 auto;
+}
+.ci-axis-rule { width: 1px; flex: 0 0 auto; background: var(--eureka-spatial-grid); margin-right: 16px; position: relative; }
+.ci-axis-content { flex: 1 1 auto; min-width: 0; padding-bottom: 4px; }
+
+.ci-sect { padding: 10px 0 14px; }
+.ci-sect-head { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
+.ci-sect-k {
+  font-family: var(--font-mono); font-size: 10px; font-weight: 700; letter-spacing: .08em;
+  border: 1px solid var(--eureka-spatial-hairline); padding: 1px 5px; border-radius: 2px; line-height: 1.2;
+}
+.ci-sect-title {
+  font-family: var(--font-mono); font-size: 10px; font-weight: 600; text-transform: uppercase;
+  letter-spacing: .1em; color: var(--eureka-text-label);
+}
+.ci-sect-priority {
+  margin-left: auto; font-family: var(--font-mono); font-size: 8px; color: var(--eureka-signal-cognitive);
+  border: 1px solid var(--eureka-signal-cognitive); border-radius: 2px; padding: 0 3px;
+}
+.ci-sect-body { border-left: 2px solid var(--eureka-spatial-hairline); padding-left: 16px; }
+
+.ci-answer-statement {
+  font-family: var(--font-display); font-size: 16px; line-height: 1.45; color: var(--eureka-text-display); font-weight: 500;
+}
+.ci-prose { font-size: 12.5px; line-height: 1.65; color: var(--eureka-text-section); }
+.ci-micro { font-family: var(--font-mono); font-size: 9.5px; color: var(--eureka-text-micro); }
+.ci-note { font-size: 8.5px; font-family: var(--font-mono); color: var(--eureka-text-micro); letter-spacing: .02em; }
+.ci-note.is-cog { color: var(--eureka-signal-cognitive); }
+
+.ci-tag-space { display: flex; flex-wrap: wrap; gap: 6px; }
+.ci-tag-chip {
+  display: inline-flex; align-items: center; gap: 5px; border: 1px solid var(--eureka-spatial-hairline);
+  border-radius: 2px; padding: 2px 7px; font-family: var(--font-mono); font-size: 9px; color: var(--eureka-text-section);
+}
+.ci-tag-chip.is-rec { color: var(--eureka-signal-cognitive); border-color: var(--eureka-signal-cognitive); }
+
+.ci-list { display: flex; flex-direction: column; gap: 0; }
+.ci-list-row {
+  display: flex; align-items: baseline; gap: 10px; padding: 7px 8px;
+  border-bottom: 1px solid var(--eureka-spatial-grid); font-size: 11.5px;
+}
+.ci-list-id { font-family: var(--font-mono); font-size: 9.5px; font-weight: 700; color: var(--eureka-text-display); flex: 0 0 auto; }
+.ci-list-text { flex: 1 1 auto; min-width: 0; color: var(--eureka-text-section); line-height: 1.5; }
+.ci-list-state { font-family: var(--font-mono); font-size: 8px; text-transform: uppercase; letter-spacing: .05em; flex: 0 0 auto; }
+
+/* human decision — visually dominant, unambiguous, never an auto-recommendation */
+.ci-human-decision {
+  position: relative; border: 1.5px solid var(--eureka-signal-authority); padding: 16px 18px 14px;
+  background: color-mix(in srgb, var(--eureka-signal-authority) 5%, var(--eureka-surface));
+}
+.ci-human-decision-mark {
+  position: absolute; top: 0; left: 0; width: 34px; height: 3px; background: var(--eureka-signal-authority);
+}
+.ci-human-choice {
+  font-family: var(--font-mono); font-size: 30px; font-weight: 700; line-height: 1; color: var(--eureka-signal-authority);
+  margin-bottom: 12px;
+}
+.ci-human-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 10px 18px; }
+
+.ci-execution { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.ci-command-explore { padding: 8px 0 6px; border-top: 1px solid var(--eureka-spatial-grid); }
+
+/* ---- Storytelling progressive narrative (secondary surface) --------------- */
+.ci-narrative { display: flex; flex-direction: column; gap: 0; max-width: 880px; }
+.ci-narrative-layer {
+  border-left: 2px solid var(--eureka-spatial-hairline);
+  padding-left: 16px; margin-left: 4px; padding-bottom: 16px;
+}
+.ci-narrative-layer.is-open { border-left-color: var(--eureka-signal-cognitive); }
+.ci-narrative-head {
+  display: flex; align-items: center; gap: 10px; width: 100%;
+  background: transparent; border: 0; text-align: left; cursor: pointer;
+  padding: 4px 0 8px; color: var(--eureka-text-display);
+}
+.ci-narrative-head .ni-title {
+  font-family: var(--font-mono); font-size: 10px; font-weight: 600;
+  text-transform: uppercase; letter-spacing: .08em; color: var(--eureka-text-label);
+}
+.ci-narrative-head .ni-title.is-open { color: var(--eureka-signal-cognitive); }
+
+/* ---- Responsive ---------------------------------------------------------- */
+@media (max-width: 1080px) {
+  .ci-body, .ci-body.has-inspector { grid-template-columns: minmax(0, 1fr); grid-template-rows: minmax(420px, auto); }
+  .ci-inspector-rail { order: 2; min-height: 320px; }
+  .ci-stage { order: 1; }
+  .ci-header { flex-direction: column; align-items: flex-start; }
+  .ci-trajectory { padding-bottom: 10px; }
+}

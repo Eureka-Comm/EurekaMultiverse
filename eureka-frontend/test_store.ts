@@ -1,0 +1,1 @@
+import { useWorkStore } from './src/store/workStore'; useWorkStore.getState().startWork('Test', 'Test').then(() => { const state = useWorkStore.getState(); console.log('ACTIVE_WORK: YES'); console.log('WORK_ID:', state.activeWork?.work.workId); console.log('TASK_CATEGORY:', state.activeWork?.work.taskCategory); }).catch(e => console.error(e));

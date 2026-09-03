@@ -1,0 +1,191 @@
+/* ============================================================================
+   LS91 — COGNITIVE FIELD (Knowledge Space -> spatial, GPU-accelerated field)
+   ----------------------------------------------------------------------------
+   White/scientific/precise. The stage is a true 3D space (WebGL/WebGPU or the
+   DOM/SVG fallback). The canvas fills the stage absolutely (no layout jump).
+   ========================================================================== */
+
+/*
+ * The Cognitive Field SURFACE. Scoped to `[data-cognitive-field]` so this rule
+ * (position/height/min-height/border/background) never leaks onto the reusable
+ * `.ci-field` micro-cells (primitives MicroField, StorytellingPanel SummaryField).
+ * LS93 v6: previously the unscoped `.ci-field` made every micro-card 560px tall
+ * (mostly-empty fixed-height reserved area).
+ */
+.ci-field[data-cognitive-field] {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  height: 100%;
+  min-height: 560px;
+  overflow: hidden;
+  border: 1px solid var(--eureka-spatial-hairline);
+  background: var(--eureka-surface);
+}
+
+/* HUD readout — instrument voice, never a badge-explainer */
+.ci-field-hud {
+  display: flex;
+  align-items: baseline;
+  gap: 14px;
+  flex-wrap: wrap;
+  padding: 8px 14px;
+  border-bottom: 1px solid var(--eureka-spatial-grid);
+}
+.ci-field-hud-title {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 12px;
+  color: var(--eureka-text-display);
+  letter-spacing: .01em;
+}
+.ci-field-hud-sub {
+  font-family: var(--font-mono);
+  font-size: 9px;
+  color: var(--eureka-text-micro);
+}
+.ci-field-hud-backend {
+  margin-left: auto;
+  font-family: var(--font-mono);
+  font-size: 8.5px;
+  color: var(--eureka-signal-cognitive);
+  text-transform: uppercase;
+  letter-spacing: .06em;
+}
+.ci-field-hud-hint {
+  font-family: var(--font-mono);
+  font-size: 8.5px;
+  color: var(--eureka-text-micro);
+}
+
+.ci-field-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 14px;
+  border-bottom: 1px solid var(--eureka-spatial-grid);
+}
+.ci-field-btn {
+  font-family: var(--font-mono);
+  font-size: 9px;
+  text-transform: uppercase;
+  letter-spacing: .06em;
+  color: var(--eureka-text-label);
+  background: var(--eureka-surface);
+  border: 1px solid var(--eureka-spatial-hairline);
+  border-radius: 2px;
+  padding: 3px 9px;
+  cursor: pointer;
+  transition: color .15s ease, border-color .15s ease;
+}
+.ci-field-btn:hover { color: var(--eureka-text-display); border-color: var(--eureka-signal-cognitive); }
+.ci-field-btn.is-on { color: var(--eureka-signal-cognitive); border-color: var(--eureka-signal-cognitive); }
+.ci-field-toolbar-note {
+  margin-left: auto;
+  font-family: var(--font-mono);
+  font-size: 8.5px;
+  color: var(--eureka-text-micro);
+}
+
+/* The 3D stage — the instrument surface itself. LS93 v7: a deep, dark cognitive
+   operating surface (NOT a global theme change) with only a hairline registration
+   grid (~2% opacity) so it never competes with the data. The WebGL renderer paints
+   an opaque dark clear-color over this, so the soft gradient shows only during the
+   brief backend probe *before* the canvas draws. */
+.ci-field-stage {
+  position: relative;
+  flex: 1 1 auto;
+  min-height: 0;
+  width: 100%;
+  height: 100%;
+  background-color: #0a0e14;
+  background-image:
+    radial-gradient(120% 90% at 50% 38%, #0f1620 0%, #0a0e14 55%, #070a0f 100%),
+    linear-gradient(to right, rgba(120,150,190,0.03) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(120,150,190,0.03) 1px, transparent 1px);
+  background-size: 100% 100%, 32px 32px, 32px 32px;
+}
+.ci-field-stage > canvas { position: absolute; inset: 0; }
+
+.ci-field-pending {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-mono);
+  font-size: 9px;
+  letter-spacing: .06em;
+  color: var(--eureka-text-micro);
+}
+
+.ci-field-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 20px 34px;
+  align-items: flex-start;
+  padding: 10px 14px 12px;
+  border-top: 1px solid var(--eureka-spatial-grid);
+}
+.ci-legend-col { display: flex; flex-direction: column; gap: 5px; }
+.ci-legend-head {
+  font-family: var(--font-mono);
+  font-size: 8px;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  color: var(--eureka-text-micro);
+}
+.ci-legend-row { display: flex; flex-wrap: wrap; gap: 6px 16px; }
+.ci-field-legend .ci-legend-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-family: var(--font-mono);
+  font-size: 9px;
+  color: var(--eureka-text-label);
+  white-space: nowrap;
+}
+.ci-legend-mark { font-size: 11px; line-height: 1; }
+.ci-legend-tone { max-width: 320px; }
+
+/* Accessible textual state — the field is never the only semantic source */
+.ci-field-sr {
+  position: absolute;
+  bottom: 8px;
+  left: 12px;
+  max-width: 60%;
+  font-family: var(--font-mono);
+  font-size: 8.5px;
+  color: var(--eureka-text-micro);
+  pointer-events: none;
+  opacity: 0.85;
+}
+
+/* ---- DOM/SVG fallback ---------------------------------------------------- */
+.ci-field-fallback {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  overflow: auto;
+  background: var(--eureka-surface);
+}
+.ci-field-fallback-note {
+  padding: 6px 12px;
+  font-family: var(--font-mono);
+  font-size: 8.5px;
+  color: var(--eureka-signal-ranking);
+  text-transform: uppercase;
+  letter-spacing: .05em;
+  border-bottom: 1px dashed color-mix(in srgb, var(--eureka-signal-ranking) 45%, transparent);
+}
+.ci-field-fallback svg { display: block; }
+.ci-field-fallback-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  padding: 8px 12px;
+  font-family: var(--font-mono);
+  font-size: 8.5px;
+  color: var(--eureka-text-label);
+}

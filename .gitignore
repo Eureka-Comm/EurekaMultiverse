@@ -1,0 +1,46 @@
+# ===== SECRETS (never commit) =====
+.env
+.env.*
+*.env
+
+# ===== Node / frontend =====
+node_modules/
+dist/
+dist-ssr/
+.vite/
+*.local
+*.tsbuildinfo
+
+# ===== Python =====
+__pycache__/
+*.py[cod]
+.pytest_cache/
+*.egg-info/
+.venv/
+venv/
+
+# ===== Editor / OS =====
+.vscode/*
+!.vscode/extensions.json
+.idea
+.DS_Store
+*.sw?
+
+# ===== Logs =====
+*.log
+logs/
+
+# ===== Local scratch / working artifacts (repo root) =====
+_backup*/
+/*.png
+/*.jpg
+/*.jpeg
+/*.gif
+/*.log
+/tmp_*
+/_*
+
+# ===== Backend transient dumps =====
+/*.json
+/LOOP_*.json
+/R8.8.7.5-*.json

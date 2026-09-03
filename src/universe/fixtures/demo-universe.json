@@ -1,0 +1,14 @@
+{
+  "metadata": {
+    "version": "0.1.0",
+    "description": "Canonical minimal universe for testing"
+  },
+  "entities": [
+    { "id": "A", "type": "Star", "attributes": {} },
+    { "id": "B", "type": "Planet", "attributes": {} }
+  ],
+  "relationships": [
+    { "source": "A", "target": "B", "type": "orbits", "attributes": {} }
+  ],
+  "phenomena": []
+}
