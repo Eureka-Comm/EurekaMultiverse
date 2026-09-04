@@ -748,14 +748,15 @@ class WorkOrchestrator:
     ]
 
     def _normalize_em_pipeline_order(self, execution_plan) -> None:
-        """Rewire step dependencies so NO step runs before a LATER-EM prerequisite.
+        """Technical ordering normalization (Core-hub — does NOT authorize next-owner).
 
-        For each step we keep only deps on same-EM (intra) steps and on strictly
-        lower-EM-rank steps, then add every strictly-lower-rank step as a dependency.
-        Because a step ends up depending only on strictly-lower-rank steps (and its own
-        EM), the resulting graph is acyclic and respects the canonical EM order — so a
-        Prescriptor always precedes an Actioner, regardless of the LLM plan's ordering.
-        Steps with an unknown/empty EM keep their dependencies untouched (no-op).
+        This only prevents a CYCLIC / backward dependency edge: a step's explicit task-network
+        dependencies that point to a LATER-EM (rank > its own) are dropped, so the graph stays
+        acyclic. It does NOT add dependencies based on EM rank, and therefore does NOT create an
+        automatic chain between EMs. A step only runs when its EXPLICIT (task-network) dependencies
+        are complete — the runtime's `advance` is Core-driven, and step presence + dependency
+        satisfaction does not, by itself, authorize the next EM. Steps with an unknown/empty EM are
+        left untouched.
         """
         steps = list(execution_plan.steps)
         order = {name: i for i, name in enumerate(self._EM_PIPELINE_ORDER)}
@@ -777,14 +778,8 @@ class WorkOrchestrator:
                 dr = ranks.get(d, 99)
                 if dr is None:
                     dr = 99  # unknown/empty-EM dependency → treat as "after all", never a back-edge
-                # Keep intra-EM and lower-rank deps; drop backward (higher-rank) deps.
+                # Keep explicit deps that are NOT a backward (higher-rank) edge. No rank-add here:
+                # we never inject lower-rank steps as dependencies (no auto-chain).
                 if dr <= r and d not in keep:
                     keep.append(d)
-            # Add every strictly-lower-rank step so the EM order is enforced.
-            for other in steps:
-                if other.step_id == s.step_id:
-                    continue
-                orr = ranks.get(other.step_id, 99)
-                if orr is not None and orr < r and other.step_id not in keep:
-                    keep.append(other.step_id)
             s.dependencies = keep
