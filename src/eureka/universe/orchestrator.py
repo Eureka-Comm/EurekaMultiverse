@@ -143,6 +143,79 @@ def _apply_knowledge_routing(plan: ExecutionPlan, operation_mode: str) -> None:
     plan.steps = kept
 
 
+# Canonical capabilities for the DECISION runtime chain (the plan-level EMs that the runtime
+# actually executes as steps). Core/Structurer are orchestration-level (always run by
+# `orchestrate` -> formulate_problem / build_network) and are NOT represented here as steps.
+#   needs_task = True when the runtime dispatch looks the step up in the task network by
+#   step_id (and owner) — those synthesized steps must also get a matching CognitiveTask.
+_DECISION_PLAN_CHAIN: list[tuple[str, str, bool]] = [
+    ("EM Descriptor", "extract_relevant_information", False),  # descriptor.execute(canonical, step)
+    ("EM Predictor", "analyze_dataset", False),                # predictor.execute(canonical, step)
+    ("EM Prescriptor", "evaluate_alternatives", True),         # prescriptor.execute_task(.., task, ..)
+    ("EM Actioner", "execute_action", True),                   # actioner.execute_task(.., task, ..)
+    ("EM Installer", "install_action", True),                  # installer.execute_task(.., task, ..)
+    ("EM Publisher", "generate_summary", True),                # publisher.execute_task(.., task, ..)
+]
+
+
+def _ensure_decision_chain(plan: ExecutionPlan, structured_problem, operation_mode: str, cap_registry) -> None:
+    """Python-authority structural guarantee for a DECISION operation.
+
+    The LLM (via ``propose_structure``) may propose a CognitiveTask network that omits the
+    decision/action EMs (e.g. only Descriptor + Publisher). Python must NOT let that strip the
+    decision chain from an operation it classified as DECISION. For each EM in the canonical
+    decision chain that is absent from the plan, this synthesises ONE canonical step (using the
+    EM's existing capability) plus, where the runtime dispatch looks the step up by step_id/owner,
+    a matching CognitiveTask. It is idempotent (never duplicates an EM that is already present)
+    and does NOT force a decision/HITL — the existing Prescriptor / authority gates decide that.
+    """
+    if operation_mode != "DECISION":
+        return
+    if not plan or not plan.steps:
+        return
+    from .problem_model import CognitiveTask
+
+    existing_ems = {getattr(s, "canonical_em", None) for s in plan.steps}
+    for em, cap_id, needs_task in _DECISION_PLAN_CHAIN:
+        if em in existing_ems:
+            continue
+        cap = cap_registry.resolve(cap_id) if cap_registry else None
+        if not cap:
+            logger.warning(
+                f"_ensure_decision_chain: no registered capability for {cap_id} ({em}); skipped."
+            )
+            continue
+        # Mirror build_network's target construction.
+        if cap.execution_target == "EM" and cap.target_em_id:
+            target = f"EM[{cap.target_em_id}]"
+        elif cap.execution_target == "SUBSYSTEM" and cap.runtime_subsystem:
+            target = f"SUBSYSTEM[{cap.runtime_subsystem[0]}]"
+        else:
+            target = f"EM[{em}]"
+        step_id = f"decision_{em.replace(' ', '_').lower()}"
+        dep_ids = [s.step_id for s in plan.steps]
+        plan.steps.append(ExecutionStep(
+            step_id=step_id,
+            capability_id=cap_id,
+            target=target,
+            canonical_em=em,
+            status="PENDING",
+            dependencies=dep_ids,
+            expected_outputs=[f"{em} canonical execution"],
+            produces_result=bool(cap.produces_result),
+            provenance=["Orchestrator _ensure_decision_chain: Python-authority canonical DECISION chain"],
+        ))
+        if needs_task and structured_problem and structured_problem.task_network:
+            structured_problem.task_network.tasks.append(CognitiveTask(
+                task_id=step_id,
+                description=f"{em} canonical execution",
+                owner=em,
+                expected_outputs=[f"{em} canonical execution"],
+                dependencies=dep_ids,
+            ))
+        existing_ems.add(em)
+
+
 def _dedup_execution_steps(plan: ExecutionPlan) -> None:
     """B3: drop steps that are TRUE duplicates — same (canonical_em, capability_id,
     target) AND same expected_outputs.
@@ -471,6 +544,10 @@ class EMStructurer:
         # KNOWLEDGE_ANSWER operation so a natural question can publish a governed LLM
         # answer without being blocked by the decision gate.
         _apply_knowledge_routing(plan, getattr(problem, "operation_mode", "KNOWLEDGE_ANSWER"))
+        # Decision-chain authority: for a DECISION operation, Python guarantees the canonical
+        # decision EMs (Predictor/Prescriptor/Actioner/Installer/Publisher) are present even if
+        # the LLM's CognitiveTask proposal omitted them. No HITL is forced; existing gates run.
+        _ensure_decision_chain(plan, structured_problem, getattr(problem, "operation_mode", "DECISION"), self.cap_registry)
         _dedup_execution_steps(plan)
         
         return structured_problem, plan
