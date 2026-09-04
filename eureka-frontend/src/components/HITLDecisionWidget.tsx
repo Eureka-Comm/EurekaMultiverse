@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useWorkStore } from '../store/workStore';
 import { selectActiveDecision, selectActiveInformationRequest } from '../selectors/decisionSelectors';
+import { API_BASE } from '../lib/apiBase';
 
 export default function HITLDecisionWidget() {
   const activeWork = useWorkStore((state) => state.activeWork);
@@ -43,7 +44,7 @@ function DecisionItem({ decision, workId }: { decision: any, workId: string }) {
     setStatus('SUBMITTING');
     setErrorMsg('');
     try {
-      const apiUrl = import.meta.env.VITE_EUREKA_API_URL || '';
+      const apiUrl = API_BASE;
       const res = await fetch(`${apiUrl}/api/work/${workId}/human_input`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -132,7 +133,7 @@ function InformationItem({ request, workId }: { request: any, workId: string }) 
     setStatus('SUBMITTING');
     setErrorMsg('');
     try {
-      const apiUrl = import.meta.env.VITE_EUREKA_API_URL || '';
+      const apiUrl = API_BASE;
       const res = await fetch(`${apiUrl}/api/work/${workId}/human_input`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },

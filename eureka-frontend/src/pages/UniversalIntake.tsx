@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useWorkStore } from '../store/workStore';
+import { API_BASE } from '../lib/apiBase';
 
 export default function UniversalIntake() {
   const startWork = useWorkStore((state) => state.startWork);
@@ -32,7 +33,7 @@ useEffect(() => {
       formData.append('file', file);
       
       try {
-        const apiUrl = import.meta.env.VITE_EUREKA_API_URL || '';
+        const apiUrl = API_BASE;
         const res = await fetch(`${apiUrl}/api/evidence`, {
           method: 'POST',
           body: formData

@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import { CanonicalWorkStateSchema } from '../domain/canonicalSchema';
 import type { CanonicalWorkState } from '../domain/canonicalSchema';
 import { z } from 'zod';
+import { API_BASE } from '../lib/apiBase';
 
 export type AppState = 'BOOTING' | 'READY' | 'NO_WORK' | 'CONTRACT_ERROR' | 'RUNTIME_ERROR';
 
@@ -23,7 +24,7 @@ export const useWorkStore = create<WorkState>((set, get) => ({
   startWork: async (intent, category, attachments = []) => {
     set({ appState: 'BOOTING' });
     try {
-      const apiUrl = import.meta.env.VITE_EUREKA_API_URL || '';
+      const apiUrl = API_BASE;
       const response = await fetch(`${apiUrl}/api/work/intake`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -63,7 +64,7 @@ export const useWorkStore = create<WorkState>((set, get) => ({
     if (!activeWork) return { status: "ERROR", reason_code: "SYSTEM_ERROR" };
     
     try {
-      const apiUrl = import.meta.env.VITE_EUREKA_API_URL || '';
+      const apiUrl = API_BASE;
       const response = await fetch(`${apiUrl}/api/work/${activeWork.work.workId}/tool_call`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -113,7 +114,7 @@ export const useWorkStore = create<WorkState>((set, get) => ({
     if (!activeWork) return { status: "ERROR", reason_code: "SYSTEM_ERROR" };
     
     try {
-      const apiUrl = import.meta.env.VITE_EUREKA_API_URL || '';
+      const apiUrl = API_BASE;
       const response = await fetch(`${apiUrl}/api/work/${activeWork.work.workId}/evidence`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -147,7 +148,7 @@ export const useWorkStore = create<WorkState>((set, get) => ({
     if (!activeWork) return { status: "ERROR", reason_code: "SYSTEM_ERROR" };
     
     try {
-      const apiUrl = import.meta.env.VITE_EUREKA_API_URL || '';
+      const apiUrl = API_BASE;
       const response = await fetch(`${apiUrl}/api/work/${activeWork.work.workId}/execute`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -184,7 +185,7 @@ export const useWorkStore = create<WorkState>((set, get) => ({
     // (WAITING_FOR_HUMAN_INPUT) remain observable after a resume.
     
     try {
-      const apiUrl = import.meta.env.VITE_EUREKA_API_URL || '';
+      const apiUrl = API_BASE;
       const response = await fetch(`${apiUrl}/api/work/${activeWork.work.workId}/state`);
       const data = await response.json();
       

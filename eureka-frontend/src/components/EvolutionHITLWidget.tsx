@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
+import { API_BASE } from '../lib/apiBase';
 
-const API = import.meta.env.VITE_EUREKA_API_URL || '';
+const API = API_BASE;
 
 type Proposal = {
   version?: string;
