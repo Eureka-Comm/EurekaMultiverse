@@ -8,6 +8,7 @@ from typing import Optional, Dict, Any, List
 import uuid
 import hashlib
 import os
+import requests
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -20,10 +21,24 @@ from src.eureka.universe.artifact_exporter import export_work, SUPPORTED_FORMATS
 
 app = FastAPI(title="EUREKA Universal Work Runtime")
 
+# CORS is configurable via EUREKA_CORS_ORIGINS (comma-separated origins). The default is a
+# safe local-dev allow-list (localhost/127.0.0.1 on the frontend and backend ports) — NOT a
+# public wildcard. For a production deployment set EUREKA_CORS_ORIGINS to the real browser
+# origin(s). Setting it to "*" is allowed but then credentials are disabled (a browser rejects
+# "Allow-Credentials: true" together with "Allow-Origin: *"). Security/runtime config only.
+_cors_env = os.getenv("EUREKA_CORS_ORIGINS", "").strip()
+if _cors_env == "*":
+    _allow_origins = ["*"]
+    _allow_credentials = False
+else:
+    _cors_default = "http://localhost:5173,http://127.0.0.1:5173,http://localhost:8000,http://127.0.0.1:8000"
+    _allow_origins = [o.strip() for o in (_cors_env or _cors_default).split(",") if o.strip()]
+    _allow_credentials = True
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=True,
+    allow_origins=_allow_origins,
+    allow_credentials=_allow_credentials,
     allow_methods=["*"],
     allow_headers=["*"],
 )
@@ -510,6 +525,52 @@ def retry_extraction(evidence_id: str, background_tasks: BackgroundTasks):
         raise HTTPException(status_code=404, detail="Evidence not found")
     background_tasks.add_task(run_extraction_background, evidence_id)
     return {"status": "EXTRACTION_QUEUED"}
+
+# ==== Copilot (LLM chat completions) — the DeepSeek API key lives ONLY on the backend. ====
+# The browser/frontend never needs (nor sees) DEEPSEEK_API_KEY: the frontend calls the EUREKA
+# backend, and only the backend (which holds the env key) talks to DeepSeek. This is required
+# for producing a public deployment — the key must never reach the browser.
+class CopilotRequest(BaseModel):
+    model: str = "deepseek-chat"
+    messages: List[Dict[str, Any]]
+    temperature: float = 0.3
+    tools: Optional[List[Dict[str, Any]]] = None
+
+@app.post("/api/copilot")
+def copilot_chat(req: CopilotRequest):
+    api_key = os.environ.get("DEEPSEEK_API_KEY")
+    base_url = os.environ.get("DEEPSEEK_BASE_URL", "https://api.deepseek.com").rstrip("/")
+    if not api_key:
+        raise HTTPException(
+            status_code=500,
+            detail={"reason_code": "MISSING_DEEPSEEK_API_KEY",
+                    "message": "DEEPSEEK_API_KEY not configured on the EUREKA backend."},
+        )
+    payload: Dict[str, Any] = {
+        "model": req.model,
+        "messages": req.messages,
+        "temperature": req.temperature,
+        "stream": False,
+    }
+    if req.tools:
+        payload["tools"] = req.tools
+    url = f"{base_url}/chat/completions"
+    try:
+        r = requests.post(
+            url,
+            json=payload,
+            headers={"Authorization": f"Bearer {api_key}", "Content-Type": "application/json"},
+            timeout=180,
+        )
+        r.raise_for_status()
+        # Pass DeepSeek's response through verbatim. The frontend reads choices[].message
+        # (.content / .tool_calls / .reasoning_content) and usage, exactly as before.
+        return r.json()
+    except requests.RequestException as e:
+        raise HTTPException(
+            status_code=502,
+            detail={"reason_code": "PROVIDER_ERROR", "message": f"DeepSeek request failed: {e}"},
+        )
 
 import asyncio
 from fastapi import BackgroundTasks

@@ -1,0 +1,11 @@
+# eureka-frontend — build context .dockerignore (stage 1 build)
+# Keeps node_modules/dist out of the build context (npm ci re-installs) and
+# ensures no .env / secrets reach the image.
+node_modules/
+dist/
+.vite/
+*.log
+.env
+.env.*
+.git/
+coverage/

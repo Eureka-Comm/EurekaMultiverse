@@ -1,0 +1,8 @@
+# ============================================================
+# EUREKA MULTIVERSE — Backend development / test dependencies
+# These are NOT needed in the runtime image; they are used only
+# for local development and the pytest suite.
+# ============================================================
+-r requirements.txt
+
+pytest==9.1.1

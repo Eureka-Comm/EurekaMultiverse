@@ -1,0 +1,52 @@
+# ============================================================
+# EUREKA MULTIVERSE — local reproducible runtime (Docker Compose)
+# Services: backend (8-EM runtime) + frontend (SPA served by nginx,
+# which reverse-proxies /api -> backend). NO database (the runtime
+# keeps works/evidence in memory).
+#
+# LOCAL (dev)  : frontend http://localhost:5173  · backend http://localhost:8000
+# PRODUCTION    : frontend on 80/443, /api proxied to backend (backend not exposed)
+# ============================================================
+services:
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile.backend
+    image: eureka-backend:latest
+    container_name: eureka-backend
+    environment:
+      # Secret comes from the host .env (never baked into the image or repo).
+      DEEPSEEK_API_KEY: ${DEEPSEEK_API_KEY:-}
+      COGNITIVE_ENGINE: ${COGNITIVE_ENGINE:-deepseek}
+      DEEPSEEK_BASE_URL: ${DEEPSEEK_BASE_URL:-https://api.deepseek.com}
+      DEEPSEEK_MODEL: ${DEEPSEEK_MODEL:-deepseek-chat}
+      OLLAMA_MODEL: ${OLLAMA_MODEL:-deepseek-r1:14b}
+      # Browser origins allowed to call the backend directly (non-docker dev).
+      # In the container the frontend uses same-origin via nginx, so CORS is moot;
+      # the default keeps localhost dev working.
+      EUREKA_CORS_ORIGINS: ${EUREKA_CORS_ORIGINS:-http://localhost:5173,http://127.0.0.1:5173}
+    ports:
+      - "8000:8000"   # local validation / direct API access. Internal-only in prod.
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request,sys; sys.exit(0) if urllib.request.urlopen('http://127.0.0.1:8000/api/health', timeout=3).status==200 else sys.exit(1)"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 25s
+
+  frontend:
+    build:
+      context: ./eureka-frontend
+      dockerfile: Dockerfile
+      args:
+        # Same-origin routing: the browser reaches the API through nginx (/api -> backend).
+        # For production set this to the real public origin (e.g. https://eureka.example.com).
+        VITE_EUREKA_API_URL: ${VITE_EUREKA_API_URL:-http://localhost:5173}
+    image: eureka-frontend:latest
+    container_name: eureka-frontend
+    depends_on:
+      - backend
+    ports:
+      - "5173:80"   # local dev mapping (container nginx listens on 80). Prod uses 80/443.
+    restart: unless-stopped

@@ -7,6 +7,11 @@ import { buildCopilotNarrativeContext } from '../domain/cognitiveStory';
 import { useCognitiveProjection } from '../hooks/useCognitiveProjection';
 import { ExecutiveCognitiveAnswer, type CognitiveFocus } from './cognitive/ExecutiveCognitiveAnswer';
 
+// LS95 (auth): the LLM copilot is reached ONLY through the EUREKA backend, never via a
+// browser-facing proxy that would expose DEEPSEEK_API_KEY. The backend holds the key and is
+// the only component that talks to DeepSeek. This base mirrors everything else in the app.
+const COPILOT_API = `${import.meta.env.VITE_EUREKA_API_URL || 'http://localhost:8000'}/api/copilot`;
+
 // Sanitize raw DSML tool-call markup leak from the model (e.g. `<| DSML | tool_calls ...`).
 // The model sometimes emits its function-call as inline DSML text instead of the structured
 // `tool_calls` array; never show that raw — replace with a digestible EUREKA interaction line.
@@ -250,7 +255,7 @@ ${cognitiveNarrativeContext}`;
     ];
 
     try {
-      const response = await fetch('/api/copilot', {
+      const response = await fetch(COPILOT_API, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -340,7 +345,7 @@ ${cognitiveNarrativeContext}`;
         
         commitCurrentHistory();
 
-        const secondResponse = await fetch('/api/copilot', {
+        const secondResponse = await fetch(COPILOT_API, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -402,7 +407,7 @@ Intención del usuario: ${fresh.work.userIntent}
 RESULTADO GOBERNADO (responde SOLO desde esto, no inventes):
 ${governed}`;
 
-      const response = await fetch('/api/copilot', {
+      const response = await fetch(COPILOT_API, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

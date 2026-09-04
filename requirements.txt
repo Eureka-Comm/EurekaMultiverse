@@ -1,0 +1,34 @@
+# ============================================================
+# EUREKA MULTIVERSE — Backend runtime requirements
+# Python 3.12 (verified runtime: Python 3.12.6)
+# Derived from the real import graph of src/eureka/universe (the
+# 8-EM runtime). Versions pinned to the ones installed and verified
+# in the functional local environment.
+# ============================================================
+
+# --- Web / API ---
+fastapi==0.110.0
+uvicorn==0.30.1
+pydantic==2.13.4
+python-multipart==0.0.9   # FastaPI file/Form uploads (/api/evidence)
+
+# --- LLM (DeepSeek / OpenAI-compatible) ---
+openai==2.21.0
+python-dotenv==1.0.1
+requests==2.34.2
+
+# --- Optional capabilities actually used by the runtime (export /
+#     analytics / scientific / evidence). The server starts without
+#     some of these, but the corresponding EUREKA capabilities
+#     (artifact export, ACFL/scientific surfaces, metrics) require
+#     them, so they are part of the runtime image. ---
+reportlab==5.0.0        # PDF export
+python-pptx==1.0.2      # PPTX export
+python-docx==1.1.0      # DOCX export
+matplotlib==3.9.0       # charts/figures
+scikit-fuzzy==0.5.0     # fuzzy ACFL
+scipy==1.17.1           # required at startup by scikit-fuzzy (via evolution/fuzzy_engine)
+numpy==2.2.6
+pandas==3.0.3
+openpyxl==3.1.5         # XLSX
+pypdf==6.16.1           # PDF ingestion

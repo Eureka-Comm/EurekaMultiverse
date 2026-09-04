@@ -1,0 +1,43 @@
+# ============================================================
+# EUREKA MULTIVERSE — Backend runtime image (8-EM pipeline)
+# Runtime: src/eureka/universe (the governed 8-EM Work Runtime).
+# The parallel harness src/eureka/foundation/cognitive (which needs
+# eureka_cognitive_sdk) is intentionally NOT included: the audit
+# proved the deployed runtime does not import it.
+# ============================================================
+FROM python:3.12-slim
+
+# Non-root runtime user
+RUN groupadd -r eureka && useradd -r -g eureka eureka
+
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    PYTHONPATH=/app \
+    PIP_NO_CACHE_DIR=1 \
+    PIP_DISABLE_PIP_VERSION_CHECK=1
+
+WORKDIR /app
+
+# Install pinned deps first (layer caching)
+COPY requirements.txt ./
+RUN pip install --no-cache-dir -r requirements.txt
+
+# Copy ONLY the backend source; never .env or secrets. The image root is
+# /app so `src` is importable (PYTHONPATH=/app). Do NOT copy tests, backups,
+# docs, or the SDK.
+COPY src/ ./src/
+
+# The app user writes ./generated/ (artifact export) and debug traces at /app.
+RUN mkdir -p /app/generated && chown -R eureka:eureka /app
+
+USER eureka
+
+EXPOSE 8000
+
+# PRODUCTION entrypoint: NO reload. Running via `python -m uvicorn` means
+# server.py's `if __name__ == "__main__"` block is never executed,
+# so reload stays off and the process is stable.
+CMD ["python", "-m", "uvicorn", "src.eureka.universe.server:app", "--host", "0.0.0.0", "--port", "8000"]
+
+HEALTHCHECK --interval=30s --timeout=5s --start-period=25s --retries=3 \
+  CMD ["python", "-c", "import urllib.request,sys; sys.exit(0) if urllib.request.urlopen('http://127.0.0.1:8000/api/health', timeout=3).status==200 else sys.exit(1)"]

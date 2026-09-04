@@ -1054,12 +1054,22 @@ class DeepSeekAdapter(CognitiveEngine):
             )
             content = response.choices[0].message.content
             data = json.loads(content)
-            with open(r'C:/Temp/deepseek_raw_response.txt', 'w', encoding='utf-8') as _f: _f.write(content)
+            try:
+                import tempfile
+                with open(os.path.join(tempfile.gettempdir(), 'deepseek_raw_response.txt'), 'w', encoding='utf-8') as _f:
+                    _f.write(content)
+            except Exception:
+                pass
             return SemanticProposal(**data)
             
             content = response.choices[0].message.content
             data = json.loads(content)
-            with open(r'C:/Temp/deepseek_raw_response.txt', 'w', encoding='utf-8') as _f: _f.write(content)
+            try:
+                import tempfile
+                with open(os.path.join(tempfile.gettempdir(), 'deepseek_raw_response.txt'), 'w', encoding='utf-8') as _f:
+                    _f.write(content)
+            except Exception:
+                pass
             return SemanticProposal(**data)
             
         except Exception as e:

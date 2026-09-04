@@ -1,0 +1,72 @@
+# ============================================================
+# EUREKA MULTIVERSE — backend build context .dockerignore
+# The backend image only needs `src/` and the requirements files.
+# Everything here is excluded from the build context (keeps the
+# context small and prevents secrets/scratch from entering).
+# ============================================================
+
+# VCS / secrets
+.git
+.github
+.env
+.env.*
+*.local
+
+# Python artifacts
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.venv/
+venv/
+*.egg-info/
+
+# Node / build
+node_modules/
+dist/
+.vite/
+
+# Logs / coverage / scratch
+*.log
+.coverage
+coverage/
+_backup*/
+*.png
+*.jpg
+*.jpeg
+*.gif
+*_backup*/
+
+# Frontend (built in its own context)
+eureka-frontend/
+
+# Unrelated projects / folders in the same tree (NOT part of the EUREKA runtime)
+airl-compiler/
+archive/
+artifacts/
+demo_shots/
+demo_video/
+docs/
+Documentacion/
+Documento_Loop/
+Documentos Proyecto/
+eureka_mvp/
+eureka-platform/
+extracted/
+fixtures/
+generated/
+generator-core/
+Loop Ralph Compiler/
+Loop Ralph Prompt Library/
+Loop Ralph Validation Engine/
+outputs/
+packages/
+roadmap/
+scripts/
+studio/
+tests/
+tmp_core_unzip/
+tmp_unzip/
+VS-001/
+workbench/
+data/
+.docx_extracted/
