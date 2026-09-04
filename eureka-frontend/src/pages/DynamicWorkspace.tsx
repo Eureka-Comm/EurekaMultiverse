@@ -80,7 +80,7 @@ export default function DynamicWorkspace() {
   const uploadEvidence = async (file: File) => {
     setStatusMsg('Uploading evidence...');
     try {
-      const apiUrl = import.meta.env.VITE_EUREKA_API_URL || 'http://localhost:8000';
+      const apiUrl = import.meta.env.VITE_EUREKA_API_URL || '';
       const formData = new FormData();
       formData.append('file', file);
       const res = await fetch(`${apiUrl}/api/evidence`, { method: 'POST', body: formData });
@@ -95,7 +95,7 @@ export default function DynamicWorkspace() {
 
   // Download the published work as a real artifact (txt/md/docx/pdf/pptx/png/svg).
   const downloadArtifact = async (fmt: string) => {
-    const apiUrl = import.meta.env.VITE_EUREKA_API_URL || 'http://localhost:8000';
+    const apiUrl = import.meta.env.VITE_EUREKA_API_URL || '';
     const workId = (activeWork as any)?.work?.workId
       || (activeWork as any)?.work?.work_id
       || (activeWork as any)?.work_id;

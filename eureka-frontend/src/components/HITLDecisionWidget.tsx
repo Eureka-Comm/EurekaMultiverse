@@ -43,7 +43,7 @@ function DecisionItem({ decision, workId }: { decision: any, workId: string }) {
     setStatus('SUBMITTING');
     setErrorMsg('');
     try {
-      const apiUrl = import.meta.env.VITE_EUREKA_API_URL || 'http://localhost:8000';
+      const apiUrl = import.meta.env.VITE_EUREKA_API_URL || '';
       const res = await fetch(`${apiUrl}/api/work/${workId}/human_input`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -132,7 +132,7 @@ function InformationItem({ request, workId }: { request: any, workId: string }) 
     setStatus('SUBMITTING');
     setErrorMsg('');
     try {
-      const apiUrl = import.meta.env.VITE_EUREKA_API_URL || 'http://localhost:8000';
+      const apiUrl = import.meta.env.VITE_EUREKA_API_URL || '';
       const res = await fetch(`${apiUrl}/api/work/${workId}/human_input`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },

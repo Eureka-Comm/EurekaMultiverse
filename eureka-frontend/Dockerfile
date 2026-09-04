@@ -10,11 +10,10 @@
 FROM node:22-alpine AS build
 WORKDIR /app
 
-# Public origin the BROWSER uses to reach the frontend+API (same-origin).
-# For local docker-compose this is e.g. http://localhost:5173; in prod set it
-# to the real public domain. It is baked into the bundle ONLY as the API base,
-# never as a secret.
-ARG VITE_EUREKA_API_URL=http://localhost:5173
+# API base the BROWSER uses. Default empty = same-origin relative /api (nginx proxies /api to the
+# backend). For a split deployment set a real absolute origin (e.g. https://eureka.example.com).
+# It is baked into the bundle ONLY as the API base, never as a secret.
+ARG VITE_EUREKA_API_URL=
 ENV VITE_EUREKA_API_URL=$VITE_EUREKA_API_URL
 
 COPY package.json package-lock.json ./

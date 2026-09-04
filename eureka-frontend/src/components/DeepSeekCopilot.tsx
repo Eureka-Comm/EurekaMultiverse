@@ -10,7 +10,7 @@ import { ExecutiveCognitiveAnswer, type CognitiveFocus } from './cognitive/Execu
 // LS95 (auth): the LLM copilot is reached ONLY through the EUREKA backend, never via a
 // browser-facing proxy that would expose DEEPSEEK_API_KEY. The backend holds the key and is
 // the only component that talks to DeepSeek. This base mirrors everything else in the app.
-const COPILOT_API = `${import.meta.env.VITE_EUREKA_API_URL || 'http://localhost:8000'}/api/copilot`;
+const COPILOT_API = `${import.meta.env.VITE_EUREKA_API_URL || ''}/api/copilot`;
 
 // Sanitize raw DSML tool-call markup leak from the model (e.g. `<| DSML | tool_calls ...`).
 // The model sometimes emits its function-call as inline DSML text instead of the structured
@@ -71,7 +71,7 @@ export default function DeepSeekCopilot({
       try {
         const formData = new FormData();
         formData.append('file', file);
-        const apiUrl = import.meta.env.VITE_EUREKA_API_URL || 'http://localhost:8000';
+        const apiUrl = import.meta.env.VITE_EUREKA_API_URL || '';
         const res = await fetch(`${apiUrl}/api/evidence`, {
           method: 'POST',
           body: formData
@@ -106,7 +106,7 @@ export default function DeepSeekCopilot({
       const hreq = infoWork?.human_requests || [];
       const infoReq = hreq.find((h: any) => h.type === 'INFORMATION' && h.blocking && String(h.status || '').toUpperCase() === 'PENDING');
       if (workId && infoReq) {
-        const apiUrl = import.meta.env.VITE_EUREKA_API_URL || 'http://localhost:8000';
+        const apiUrl = import.meta.env.VITE_EUREKA_API_URL || '';
         const answer = await fetch(`${apiUrl}/api/work/${workId}/human_input`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },

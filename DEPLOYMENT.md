@@ -68,7 +68,7 @@ Secrets are never committed. `.env` (repo root) is git-ignored; `.env.example` d
 | `COGNITIVE_ENGINE` | `deepseek` | `deepseek` \| `ollama` \| `test_double`. |
 | `OLLAMA_MODEL` | `deepseek-r1:14b` | Used when `COGNITIVE_ENGINE=ollama`. |
 | `EUREKA_CORS_ORIGINS` | `http://localhost:5173,http://127.0.0.1:5173` | Comma-separated browser origins allowed to call the backend directly. In Docker the frontend uses same-origin via nginx. Set to `*` → credentials disabled. |
-| `VITE_EUREKA_API_URL` | `http://localhost:5173` | Frontend build-time origin used to reach its own `/api` (only a route base, never a secret). |
+| `VITE_EUREKA_API_URL` | *(empty → relative `/api`)* | Frontend build-time API base. Empty = same-origin relative `/api` (nginx proxies `/api` → backend). Only a route base, never a secret. Set a real absolute origin only for a split deployment. |
 
 ## 6. Docker
 
@@ -159,8 +159,8 @@ docker compose up -d --build
 ## 16. Producción
 
 - Frontend served by nginx (80/443), `/api` proxied to the backend container (internal).
-- Set `VITE_EUREKA_API_URL` build arg to the public origin (e.g. `https://eureka.example.com`)
-  so the bundle uses the same-origin `/api` route.
+- `VITE_EUREKA_API_URL` defaults to empty (same-origin relative `/api`). Only set a real public
+  origin for a split deployment; never `http://localhost:5173`.
 - Backend port **not** exposed publicly.
 - Set `EUREKA_CORS_ORIGINS` to the real browser origin(s).
 

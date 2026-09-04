@@ -32,7 +32,7 @@ useEffect(() => {
       formData.append('file', file);
       
       try {
-        const apiUrl = import.meta.env.VITE_EUREKA_API_URL || 'http://localhost:8000';
+        const apiUrl = import.meta.env.VITE_EUREKA_API_URL || '';
         const res = await fetch(`${apiUrl}/api/evidence`, {
           method: 'POST',
           body: formData

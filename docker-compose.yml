@@ -40,9 +40,9 @@ services:
       context: ./eureka-frontend
       dockerfile: Dockerfile
       args:
-        # Same-origin routing: the browser reaches the API through nginx (/api -> backend).
-        # For production set this to the real public origin (e.g. https://eureka.example.com).
-        VITE_EUREKA_API_URL: ${VITE_EUREKA_API_URL:-http://localhost:5173}
+        # Same-origin routing: empty default => browser uses relative /api (nginx proxies /api ->
+        # backend). Set VITE_EUREKA_API_URL to a real public origin only for a split deployment.
+        VITE_EUREKA_API_URL: ${VITE_EUREKA_API_URL:-}
     image: eureka-frontend:latest
     container_name: eureka-frontend
     depends_on:
