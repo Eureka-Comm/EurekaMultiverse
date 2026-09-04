@@ -48,6 +48,22 @@ _PLAN_IMPROVEMENT_RE = re.compile(
     re.IGNORECASE,
 )
 
+# Forensic fix (declarative analysis): a request that ANALYSES / DERIVES / DISCOVERS understanding
+# from a problem ("analizar / detectar patrones / identificar factores / evaluar segmentos /
+# investigar variables / encontrar relaciones o anomalías / descubrir insights / derivar hallazgos /
+# explicar los factores") is a knowledge-derivation intent. Python (NOT the LLM) must force it to
+# DECISION so the full 8-EM + HITL runs; otherwise the LLM's REPORT/SUMMARY/QUESTION category would
+# let it be pruned to a KNOWLEDGE_ANSWER (publish-only, no Predictor/HITL). Genuine descriptive
+# summary/report requests ("resume / genera un reporte / ¿cuál fue el total? / muéstrame un
+# resumen") are NOT matched here and stay KNOWLEDGE_ANSWER.
+_DECLARATIVE_ANALYSIS_RE = re.compile(
+    r"(analiz|an[aá]lisis|detect|identific|descubr|eval[uú]|examin|investig|determin|diagnostic|"
+    r"(encontr|encuentr)(a|ar)? (relaciones|anomal[ií]as|patrones)|"
+    r"deriv(a|ar) (hallazgos|insights|patrones)|"
+    r"explic(ar|a)\s+(los\s+|la\s+|el\s+)?(factores|patrones|causas|relaciones))",
+    re.IGNORECASE,
+)
+
 
 def _detect_operation_mode(user_intent: str, llm_intent_category: str) -> str:
     """Python-authority routing decision.
@@ -69,6 +85,11 @@ def _detect_operation_mode(user_intent: str, llm_intent_category: str) -> str:
     cat = (llm_intent_category or "").strip().upper()
     # LS94: a PLAN/IMPROVEMENT intent is a prescriptive/decision operation -> full 8-EM (Predictor runs).
     if _PLAN_IMPROVEMENT_RE.search(user_intent or ""):
+        return "DECISION"
+    # Forensic fix: a declarative analysis/derivation request is a Python-authority DECISION
+    # (full 8-EM + HITL). This runs BEFORE the KNOWLEDGE category/interrogative tests so the
+    # LLM's REPORT/SUMMARY/QUESTION category cannot override it.
+    if _DECLARATIVE_ANALYSIS_RE.search(user_intent or ""):
         return "DECISION"
     if cat in _KNOWLEDGE_CATEGORIES:
         return "KNOWLEDGE_ANSWER"
