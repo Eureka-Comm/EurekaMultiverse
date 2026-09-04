@@ -1,24 +1,21 @@
-"""Canonical DECISION execution-chain authority (orchestrator._ensure_decision_chain).
+"""Task-driven decision routing (orchestrator._guard_no_silent_decision_omission).
 
-For a DECISION operation, Python must guarantee the canonical decision execution chain is
-structurally present in the plan, even if the LLM's CognitiveTask proposal omitted some EMs.
-Developer note: EM Core / EM Structurer are ORCHESTRATION-LEVEL (always run by `orchestrate` ->
-formulate_problem / build_network, shown COMPLETED in the rail). The runtime represents the
-executable chain as Descriptor -> Publisher, so the guarantee targets those plan-level EMs.
+EUREKA 5.1: Descriptor/Predictor/Prescriptor "según dependencias"; Actioner "cuando exista
+prescripción validada"; Installer "cuando se requiera sistema"; Publisher "cuando se requiera
+comunicación"; "El siguiente paso requiere asignación/autorización de EM Core".
+So DECISION is NOT a fixed chain. Python only guards against a SILENT omission of a genuinely
+required task (the prescription stage) when the problem has concrete alternatives, and NEVER
+auto-adds Predictor / Actioner / Installer / Publisher.
 """
 import pytest
 
 from src.eureka.universe.orchestrator import (
-    _ensure_decision_chain,
+    _guard_no_silent_decision_omission,
     _detect_operation_mode,
-    WorkOrchestrator,
 )
 from src.eureka.universe.capability_fabric import CapabilityRegistry
 from src.eureka.universe.canonical_state import ExecutionPlan, ExecutionStep
 from src.eureka.universe.problem_model import StructuredProblem, TaskNetwork
-from src.eureka.universe.cognitive_engine import TestDoubleCognitiveEngine
-
-PLAN_EM_CHAIN = ("EM Descriptor", "EM Predictor", "EM Prescriptor", "EM Actioner", "EM Installer", "EM Publisher")
 
 
 def _reg() -> CapabilityRegistry:
@@ -43,102 +40,76 @@ def _step(sid, em, cap, target, prod=False, deps=None):
     )
 
 
-# TEST 1 — DECISION with an incomplete LLM proposal (only Descriptor + Publisher) is completed.
-def test_decision_chain_adds_missing_ems():
+def _descriptor_publisher_plan():
+    p = ExecutionPlan()
+    p.steps.append(_step("d1", "EM Descriptor", "extract_relevant_information", "EM[SEMANTIC]"))
+    p.steps.append(_step("pub", "EM Publisher", "generate_summary", "SUBSYSTEM", prod=True, deps=["d1"]))
+    return p
+
+
+# --- No silent omission, task-driven (NO forced chain) ---
+def test_no_forced_chain_when_no_decision_signal():
     cr, sp = _reg(), _sp()
-    plan = ExecutionPlan()
-    plan.steps.append(_step("t_desc", "EM Descriptor", "extract_relevant_information", "EM[SEMANTIC]"))
-    plan.steps.append(_step("t_pub", "EM Publisher", "generate_summary", "SUBSYSTEM", prod=True, deps=["t_desc"]))
-
-    _ensure_decision_chain(plan, sp, "DECISION", cr)
-
-    ems = {s.canonical_em for s in plan.steps}
-    assert set(PLAN_EM_CHAIN) <= ems
-    # Prescriptor/Actioner/Installer need a matching CognitiveTask (runtime looks up by step_id/owner)
-    owners = {t.owner for t in sp.task_network.tasks}
-    assert {"EM Prescriptor", "EM Actioner", "EM Installer"} <= owners
+    p = _descriptor_publisher_plan()
+    _guard_no_silent_decision_omission(p, type("P", (), {"alternatives": []})(), sp, "DECISION", cr)
+    assert [s.canonical_em for s in p.steps] == ["EM Descriptor", "EM Publisher"]  # unchanged
 
 
-# TEST 2 — DECISION already has Predictor: Python adds Prescriptor/Actioner/Installer WITHOUT duplicating Predictor.
-def test_decision_chain_does_not_duplicate_predictor():
+def test_routes_prescriptor_only_when_alternatives_exist():
     cr, sp = _reg(), _sp()
-    plan = ExecutionPlan()
-    plan.steps.append(_step("d", "EM Descriptor", "extract_relevant_information", "EM[SEMANTIC]"))
-    plan.steps.append(_step("p", "EM Predictor", "analyze_dataset", "EM[SCIENTIFIC]"))
+    p = _descriptor_publisher_plan()
+    _guard_no_silent_decision_omission(p, type("P", (), {"alternatives": ["a", "b"]})(), sp, "DECISION", cr)
+    ems = [s.canonical_em for s in p.steps]
+    # only the required prescription stage is routed; NO fixed chain
+    assert "EM Prescriptor" in ems
+    assert "EM Predictor" not in ems
+    assert "EM Actioner" not in ems
+    assert "EM Installer" not in ems
+    # must not duplicate Publisher (already present)
+    assert ems.count("EM Publisher") == 1
+    # a matching CognitiveTask (owner EM Prescriptor) is routed for the runtime dispatch
+    assert any(t.owner == "EM Prescriptor" for t in sp.task_network.tasks)
 
-    _ensure_decision_chain(plan, sp, "DECISION", cr)
 
-    assert sum(1 for s in plan.steps if s.canonical_em == "EM Predictor") == 1
-    assert {"EM Prescriptor", "EM Actioner", "EM Installer"} <= {s.canonical_em for s in plan.steps}
-
-
-# TEST 3 — DECISION already complete: no duplicates are introduced.
-def test_decision_chain_complete_no_duplicates():
+def test_actioner_installer_publisher_never_auto_added():
     cr, sp = _reg(), _sp()
-    plan = ExecutionPlan()
-    specs = [
-        ("EM Descriptor", "extract_relevant_information", "EM[SEMANTIC]", False),
-        ("EM Predictor", "analyze_dataset", "EM[SCIENTIFIC]", False),
-        ("EM Prescriptor", "evaluate_alternatives", "EM[RANKING]", False),
-        ("EM Actioner", "execute_action", "EM[ACTIONER]", False),
-        ("EM Installer", "install_action", "EM[INSTALLER]", False),
-        ("EM Publisher", "generate_summary", "SUBSYSTEM", True),
-    ]
-    for em, cap, target, prod in specs:
-        plan.steps.append(_step(em.lower().replace(" ", "_"), em, cap, target, prod))
-    n = len(plan.steps)
-
-    _ensure_decision_chain(plan, sp, "DECISION", cr)
-
-    assert len(plan.steps) == n
+    p = _descriptor_publisher_plan()
+    _guard_no_silent_decision_omission(p, type("P", (), {"alternatives": ["x"]})(), sp, "DECISION", cr)
+    ems = {s.canonical_em for s in p.steps}
+    assert "EM Actioner" not in ems
+    assert "EM Installer" not in ems
 
 
-# TEST 4 — dependencies follow the canonical EM rank (no backward edges) after normalization.
-def test_decision_chain_dependencies_rank_order():
+def test_no_duplicate_when_prescriptor_present():
     cr, sp = _reg(), _sp()
-    plan = ExecutionPlan()
-    plan.steps.append(_step("t_desc", "EM Descriptor", "extract_relevant_information", "EM[SEMANTIC]"))
-    plan.steps.append(_step("t_pub", "EM Publisher", "generate_summary", "SUBSYSTEM", prod=True, deps=["t_desc"]))
-    _ensure_decision_chain(plan, sp, "DECISION", cr)
-
-    wo = WorkOrchestrator(cr, TestDoubleCognitiveEngine())
-    wo._normalize_em_pipeline_order(plan)
-
-    order = {n: i for i, n in enumerate(("EM Core", "EM Structurer", "EM Descriptor", "EM Predictor",
-                                         "EM Prescriptor", "EM Actioner", "EM Installer", "EM Publisher"))}
-    rank = {s.step_id: order.get(s.canonical_em, 99) for s in plan.steps}
-    for s in plan.steps:
-        for d in (s.dependencies or []):
-            # a step may only depend on a same-or-strictly-lower-rank EM (no back-edges -> acyclic)
-            assert rank.get(d, 99) <= rank.get(s.step_id, 99)
-    # Prescriptor must depend on the Descriptor step (or a lower-rank step), never on Publisher.
-    presc = next(s for s in plan.steps if s.canonical_em == "EM Prescriptor")
-    assert "t_pub" not in (presc.dependencies or [])
+    p = _descriptor_publisher_plan()
+    p.steps.append(_step("pre", "EM Prescriptor", "evaluate_alternatives", "EM[RANKING]", deps=["d1"]))
+    n = len(p.steps)
+    _guard_no_silent_decision_omission(p, type("P", (), {"alternatives": ["a"]})(), sp, "DECISION", cr)
+    assert len(p.steps) == n  # idempotent / no duplication
 
 
-# TEST 5 — idempotent: applying twice yields the same logical plan.
-def test_decision_chain_idempotent():
+def test_idempotent():
     cr, sp = _reg(), _sp()
-    plan = ExecutionPlan()
-    plan.steps.append(_step("d", "EM Descriptor", "extract_relevant_information", "EM[SEMANTIC]"))
-    _ensure_decision_chain(plan, sp, "DECISION", cr)
-    ems = [s.canonical_em for s in plan.steps]
-    _ensure_decision_chain(plan, sp, "DECISION", cr)
-    assert [s.canonical_em for s in plan.steps] == ems
+    p = _descriptor_publisher_plan()
+    prob = type("P", (), {"alternatives": ["a", "b"]})()
+    _guard_no_silent_decision_omission(p, prob, sp, "DECISION", cr)
+    n = len(p.steps)
+    _guard_no_silent_decision_omission(p, prob, sp, "DECISION", cr)
+    assert len(p.steps) == n
 
 
-# TEST 6 — KNOWLEDGE_ANSWER must NOT receive the decision chain.
-def test_decision_chain_knowledge_noop():
+def test_knowledge_answer_noop():
     cr, sp = _reg(), _sp()
-    plan = ExecutionPlan()
-    plan.steps.append(_step("d", "EM Descriptor", "extract_relevant_information", "EM[SEMANTIC]"))
-    _ensure_decision_chain(plan, sp, "KNOWLEDGE_ANSWER", cr)
-    assert [s.canonical_em for s in plan.steps] == ["EM Descriptor"]
+    p = _descriptor_publisher_plan()
+    _guard_no_silent_decision_omission(p, type("P", (), {"alternatives": ["a", "b"]})(), sp, "KNOWLEDGE_ANSWER", cr)
+    assert [s.canonical_em for s in p.steps] == ["EM Descriptor", "EM Publisher"]
 
 
-# TEST 7 — declarative analysis routing regression (previous fix preserved).
-def test_declarative_analysis_routing():
+# --- Routing sanity (preserve 67d3824) ---
+def test_declarative_analysis_is_decision():
     assert _detect_operation_mode(
         "Analizar el comportamiento de ventas y detectar los principales patrones.", "REPORT") == "DECISION"
     assert _detect_operation_mode("Genera un reporte de ventas.", "REPORT") == "KNOWLEDGE_ANSWER"
     assert _detect_operation_mode("Resume el comportamiento de ventas.", "SUMMARY") == "KNOWLEDGE_ANSWER"
+    assert _detect_operation_mode("¿Cuál fue el total de ventas?", "QUESTION") == "KNOWLEDGE_ANSWER"
