@@ -1,13 +1,25 @@
 import { Card, CardContent, CardHeader, CardTitle } from "../../components/ui/Card";
 import { Settings as SettingsIcon, ShieldAlert, Database, Paintbrush } from "lucide-react";
+import { useAuthStore, isAdmin } from "../../store/authStore";
+import AdminConsole from "../admin/AdminConsole";
 
 export default function Settings() {
+  const { user } = useAuthStore();
+  const admin = isAdmin(user?.role);
+
   return (
     <div className="flex flex-col h-full p-8 bg-canvas">
       <div className="mb-8">
         <h1 className="text-3xl font-bold tracking-tight text-text">Platform Settings</h1>
         <p className="text-text-muted mt-1 text-sm">Configure EUREKA environment variables, appearance, and strictness.</p>
       </div>
+
+      {/* ADMINISTRATION — visible only to administrators; /api/admin/* is server-authoritative */}
+      {admin && (
+        <div className="mb-8 rounded-xl border border-border overflow-hidden" style={{ background: 'var(--eureka-canvas)', padding: '22px' }}>
+          <AdminConsole />
+        </div>
+      )}
 
       <div className="grid grid-cols-2 gap-6">
         <Card className="bg-surface-elevated border-border">

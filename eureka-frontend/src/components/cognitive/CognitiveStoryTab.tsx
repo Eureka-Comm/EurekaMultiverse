@@ -12,9 +12,7 @@ import {
 import { CHAPTERS, type ChapterId } from './chapters/registry';
 import { ChapterNavigator } from './ChapterNavigator';
 import { LineageRibbon } from './LineageRibbon';
-import { CognitiveField } from './CognitiveField';
 import { CognitiveOperationMap } from './CognitiveOperationMap';
-import { KnowledgeMap } from './KnowledgeMap';
 import { Inspector } from './Inspector';
 import { StorytellingPanel } from './StorytellingPanel';
 import { RegisterPlus, CoordReadout } from './primitives';
@@ -43,20 +41,7 @@ const EM_TO_CHAPTER: Record<string, ChapterId> = {
   'EM Core': 'question',
 };
 
-type Mode = 'map' | 'narrative' | 'graph';
-
-/** Which artifact kinds the Knowledge Space focuses on for a given chapter. */
-const CHAPTER_KINDS: Record<string, string[]> = {
-  open: ['PROBLEM', 'EVIDENCE', 'FINDING', 'PREDICTION', 'DECISION'],
-  question: ['PROBLEM'],
-  context: ['PROBLEM', 'DECISION', 'EXECUTION', 'FROZEN', 'RESULT'],
-  discovery: ['EVIDENCE', 'FINDING'],
-  prediction: ['PREDICTION', 'FINDING', 'EVIDENCE'],
-  prescription: ['PRESCRIPTION', 'ALTERNATIVE', 'DECISION'],
-  decision: ['DECISION', 'ALTERNATIVE', 'PRESCRIPTION'],
-  action: ['ACTION', 'DECISION', 'EXECUTION'],
-  result: ['RESULT', 'EXECUTION', 'FROZEN'],
-};
+type Mode = 'map' | 'narrative';
 
 interface Selection {
   title: string;
@@ -78,13 +63,9 @@ export function CognitiveStoryTab() {
     // Dev/screenshot harness: jump straight to the Knowledge Space via ?m=graph,
     // the narrative chapters via ?m=narrative, or default to the Operation Map.
     const m = new URLSearchParams(window.location.search).get('m');
-    if (m === 'graph') return 'graph';
     if (m === 'narrative') return 'narrative';
     return 'map';
   });
-  // Dev/screenshot harness: force the PRE-LS91 React Flow map via ?renderer=reactflow
-  // (used only to capture a genuine BEFORE state; never changes production behavior).
-  const legacyMap = new URLSearchParams(window.location.search).get('renderer') === 'reactflow';
   const [selection, setSelection] = useState<Selection | null>(null);
 
   const setChapterForArtifact = (kind: string) => {
@@ -169,7 +150,7 @@ export function CognitiveStoryTab() {
           </span>
           {/* mode toggle: UNDERSTAND (operation map) vs EXPLORE (3D knowledge space) */}
           <div className="flex items-center gap-0.5 rounded-lg border border-[var(--eureka-spatial-hairline)] p-0.5 overflow-hidden">
-            {(['map', 'narrative', 'graph'] as Mode[]).map((m) => (
+            {(['map', 'narrative'] as Mode[]).map((m) => (
               <button
                 key={m}
                 onClick={() => setMode(m)}
@@ -177,7 +158,7 @@ export function CognitiveStoryTab() {
                   mode === m ? 'bg-[var(--eureka-surface-selected)] text-[var(--eureka-text-display)]' : 'text-[var(--eureka-text-label)] hover:text-[var(--eureka-text-display)]'
                 }`}
               >
-                {m === 'map' ? 'Understand' : m === 'narrative' ? 'Cognitive State' : 'Explore'}
+                {m === 'map' ? 'Understand' : 'Cognitive State'}
               </button>
             ))}
           </div>
@@ -197,7 +178,7 @@ export function CognitiveStoryTab() {
           <div className="ci-stage-scroll">
             <AnimatePresence mode="wait">
               <motion.div
-                key={mode === 'graph' ? 'graph' : mode === 'map' ? 'map' : chapter}
+                key={mode === 'map' ? 'map' : chapter}
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -10 }}
@@ -207,21 +188,6 @@ export function CognitiveStoryTab() {
                   <div className="w-full h-[560px]" data-operationsurface="map">
                     <CognitiveOperationMap dto={dto} graph={graph} onSelectArtifact={onSelectArtifact} />
                   </div>
-                ) : mode === 'graph' ? (
-                  isEmpty ? (
-                    <div className="ci-empty h-[520px]">
-                      <div className="text-xs font-bold uppercase tracking-widest text-[var(--eureka-signal-semantic)]">No governed graph</div>
-                      <p className="text-xs max-w-md">Data pending — the canonical state has not emitted any artifact for this work.</p>
-                    </div>
-                  ) : (
-                    <div className="w-full h-[560px]">
-                      {legacyMap ? (
-                        <KnowledgeMap graph={graph} onSelect={onSelectArtifact} selectedId={selectedId} chapterKinds={CHAPTER_KINDS[chapter]} />
-                      ) : (
-                        <CognitiveField graph={graph} onSelect={onSelectArtifact} selectedId={selectedId} chapterKinds={null} />
-                      )}
-                    </div>
-                  )
                 ) : (
                   <div className="ci-hero">
                     <ActiveHero

@@ -39,6 +39,36 @@ export function ArtifactDetail({ a, compact }: { a: GraphArtifact; compact?: boo
         {a.description || 'DATA NOT AVAILABLE'}
       </div>
 
+      {/* Recommendation vs Human decision — real booleans only, never conflated */}
+      {(a.recommended || a.humanSelected) && (
+        <div className="flex flex-wrap gap-1 pt-0.5">
+          {a.recommended && (
+            <span className="text-[9px] font-mono uppercase tracking-wider px-2 py-0.5 rounded border border-[var(--eureka-signal-cognitive)] text-[var(--eureka-signal-cognitive)]">
+              Recommending · EUREKA
+            </span>
+          )}
+          {a.humanSelected && (
+            <span className="text-[9px] font-mono uppercase tracking-wider px-2 py-0.5 rounded border border-[var(--eureka-signal-semantic)] text-[var(--eureka-signal-semantic)]">
+              Human selected
+            </span>
+          )}
+        </div>
+      )}
+      {a.kind === 'DECISION' && a.authority === 'HUMAN_AUTHORIZED' && (
+        <div className="text-[9px] font-mono uppercase tracking-wider text-[var(--eureka-text-label)]">
+          Authority: human decision
+        </div>
+      )}
+
+      {/* Honest real computed/typological data when present (never synthesized) */}
+      {(a.modelType != null || a.numericValue != null || a.stepCount != null) && (
+        <div className="grid grid-cols-1 gap-2 pt-1">
+          {a.modelType != null && <Row label="Model" value={<span className="font-mono">{a.modelType}</span>} />}
+          {a.numericValue != null && <Row label="Value" value={<span className="font-mono">{a.numericValue}</span>} />}
+          {a.stepCount != null && <Row label="Steps" value={<span className="font-mono">{a.stepCount}</span>} />}
+        </div>
+      )}
+
       {!compact && (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-2 pt-1">
           <Row label="Status" value={<span className="font-mono">{a.status || '—'}</span>} />

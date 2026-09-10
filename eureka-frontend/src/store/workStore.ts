@@ -14,6 +14,8 @@ interface WorkState {
   attachEvidence: (evidenceId: string) => Promise<any>;
   executeWork: (intent: string) => Promise<any>;
   pollState: () => void;
+  /** READ-ONLY: load an EXISTING canonical work by id into the active projection (observability). */
+  loadWorkById: (workId: string) => Promise<any>;
   clearWork: () => void;
 }
 
@@ -198,6 +200,27 @@ export const useWorkStore = create<WorkState>((set, get) => ({
     }
   },
 
-  clearWork: () => set({ activeWork: null, appState: 'NO_WORK' })
+  clearWork: () => set({ activeWork: null, appState: 'NO_WORK' }),
+  loadWorkById: async (workId: string) => {
+    try {
+      const apiUrl = API_BASE;
+      const response = await fetch(`${apiUrl}/api/work/${encodeURIComponent(workId)}/state`);
+      const data = await response.json();
+      if (!response.ok) {
+        set({ activeWork: null, appState: 'NO_WORK' });
+        return { status: "ERROR", reason_code: data.detail?.reason_code || 'SYSTEM_ERROR', message: data.detail?.message || 'Work not found' };
+      }
+      const validatedState = CanonicalWorkStateSchema.parse(data);
+      set({ activeWork: validatedState, appState: 'READY' });
+      return validatedState;
+    } catch (e: any) {
+      if (e?.errors) {
+        set({ activeWork: null, appState: 'CONTRACT_ERROR' });
+        return { status: 'CONTRACT_ERROR', reason_code: 'CONTRACT_ERROR', message: e.errors.map((x: any) => x.path.join('.') + ' ' + x.message).join(', ') };
+      }
+      set({ activeWork: null, appState: 'NO_WORK' });
+      return { status: "ERROR", reason_code: "SYSTEM_ERROR", message: e?.message || 'Unknown network error' };
+    }
+  },
 }));
 

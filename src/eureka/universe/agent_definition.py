@@ -1,4 +1,4 @@
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, ConfigDict
 from typing import List, Dict, Any
 
 class AgentDefinition(BaseModel):
@@ -16,5 +16,4 @@ class AgentDefinition(BaseModel):
     knowledge_sources: List[str] = Field(..., description="Identifiers of knowledge sources the agent can reference")
     provider_policy: Dict[str, Any] = Field(..., description="Configuration policy for the provider (e.g., timeout, allowed models)")
 
-    class Config:
-        extra = "forbid"
+    model_config = ConfigDict(extra="forbid")

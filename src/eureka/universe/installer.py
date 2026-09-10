@@ -1,14 +1,13 @@
 import uuid
-from typing import Optional
+from typing import Optional, Any
 
 from .problem_model import ProblemModel, CognitiveTask
 from .canonical_state import CanonicalWorkState
 from .action_model import ValidatedActionPlan
 from .installation_model import ExecutionRequest, ExecutionState, ExecutionResult
-from .controlled_execution_adapter import ControlledExecutionAdapter
 
 class EMInstaller:
-    def __init__(self, adapter: ControlledExecutionAdapter):
+    def __init__(self, adapter: Any):
         self.adapter = adapter
 
     def execute_task(self, problem: ProblemModel, task: CognitiveTask, canonical_state: CanonicalWorkState) -> CanonicalWorkState:

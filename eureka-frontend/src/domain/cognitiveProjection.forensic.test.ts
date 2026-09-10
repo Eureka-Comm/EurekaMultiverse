@@ -5,6 +5,7 @@ import {
   buildCognitiveProjectionGraph,
   relatedArtifactsForEM,
   emRoleLabel,
+  edgeClassification,
 } from './cognitiveProjectionGraph';
 import type { CanonicalWorkState } from './canonicalSchema';
 
@@ -178,6 +179,38 @@ describe('Forensic validation (§28) — projection/UI truthfulness', () => {
     const allowed = ['derived_from', 'supports', 'produced_by', 'selected_by', 'authorized_by', 'executed_as', 'frozen_as'];
     labels.forEach((l) => expect(allowed).toContain(l));
     expect(labels.includes('causes' as any)).toBe(false);
+  });
+
+  it('every edge carries an explicit CONSTELACIÓN classification (OBSERVED/CONTRACTUAL/DERIVED, never ASSUMED)', () => {
+    const s = base();
+    s.extracted_evidence = { 'EVI-1': { text_blocks: ['t'] } };
+    s.knowledge = { findings: [{ finding_id: 'FND-1', statement: 'x', status: 'VALIDATED', evidence_refs: ['EVI-1'], provenance: [] }] };
+    s.prescriptive_knowledge = { prescriptions: [{ prescription_id: 'PRESC-1', alternatives: [{ alternative_id: 'ALT-01', description: 'one' }], rationale: 'x' }] };
+    s.human_decision = { decision_id: 'DEC-1', selected_alternative_id: 'ALT-01' };
+    s.action_plan = { plan_id: 'AP-1', selected_alternative_id: 'ALT-01', human_decision_id: 'DEC-1', validation_status: 'VALIDATED', authority: 'HUMAN' };
+    const p = buildCognitiveProjection(s as any);
+    const g = buildCognitiveProjectionGraph(p);
+    expect(g.edges.length).toBeGreaterThan(0);
+    for (const e of g.edges) {
+      expect(['OBSERVED', 'CONTRACTUAL', 'DERIVED', 'NOT_OBSERVED']).toContain(e.classification);
+      expect(e.classification).not.toBe('ASSUMED' as any);
+    }
+    const cls = (l: string) => g.edges.filter((e) => e.label === l).map((e) => e.classification);
+    expect(cls('derived_from').every((c) => c === 'DERIVED')).toBe(true);
+    expect(cls('selected_by').every((c) => c === 'OBSERVED')).toBe(true);
+    expect(cls('authorized_by').every((c) => c === 'OBSERVED')).toBe(true);
+    expect(cls('supports').every((c) => c === 'CONTRACTUAL')).toBe(true);
+    expect(cls('produced_by').every((c) => c === 'CONTRACTUAL')).toBe(true);
+  });
+
+  it('edgeClassification is deterministic and never maps a semantic to ASSUMED', () => {
+    expect(edgeClassification('derived_from')).toBe('DERIVED');
+    expect(edgeClassification('executed_as')).toBe('DERIVED');
+    expect(edgeClassification('frozen_as')).toBe('DERIVED');
+    expect(edgeClassification('selected_by')).toBe('OBSERVED');
+    expect(edgeClassification('authorized_by')).toBe('OBSERVED');
+    expect(edgeClassification('supports')).toBe('CONTRACTUAL');
+    expect(edgeClassification('produced_by')).toBe('CONTRACTUAL');
   });
 
   // ---- LS90 — OPEN RESEARCH cognitive operation (what remains open) ----

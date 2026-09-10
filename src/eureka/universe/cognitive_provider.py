@@ -14,7 +14,7 @@ from __future__ import annotations
 import abc
 import hashlib
 import json
-from datetime import datetime
+from datetime import datetime, timezone
 from enum import Enum
 from typing import Any, Dict
 
@@ -68,7 +68,7 @@ class ProviderMetadata(BaseModel):
     request_id: str = Field(..., description="Unique request identifier (UUID)")
     input_hash: str = Field(..., description="SHA‑256 hash of the canonical JSON payload")
     output_hash: str = Field(..., description="SHA‑256 hash of the provider's raw output (JSON)")
-    timestamp: datetime = Field(default_factory=datetime.utcnow, description="UTC timestamp of the call")
+    timestamp: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), description="UTC timestamp of the call")
 
     @staticmethod
     def compute_hash(payload: Dict[str, Any]) -> str:

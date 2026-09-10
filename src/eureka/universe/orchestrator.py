@@ -264,7 +264,7 @@ class EMCoreInterpreter:
             # Trace user intent reaching orchestrator
             import json, datetime, pathlib
             _trace_intent = {
-                "timestamp": datetime.datetime.utcnow().isoformat() + "Z",
+                "timestamp": datetime.datetime.now(datetime.timezone.utc).isoformat().replace("+00:00", "Z"),
                 "stage": "orchestrator_input",
                 "user_intent": user_intent
             }
@@ -274,14 +274,14 @@ class EMCoreInterpreter:
                 "engine_class": self.engine.__class__.__name__,
                 "method": "propose_problem",
                 "input": user_intent,
-                "timestamp_before": datetime.datetime.utcnow().isoformat() + "Z"
+                "timestamp_before": datetime.datetime.now(datetime.timezone.utc).isoformat().replace("+00:00", "Z")
             }
             proposal: SemanticProposal = self.engine.propose_problem(user_intent)
             _trace_prop["returned_object_type"] = proposal.__class__.__name__
-            _trace_prop["serialized_returned_object"] = proposal.dict()
+            _trace_prop["serialized_returned_object"] = proposal.model_dump()
             _trace_prop["intent_category"] = proposal.intent_category
             _trace_prop["description"] = proposal.problem_understanding
-            _trace_prop["timestamp_after"] = datetime.datetime.utcnow().isoformat() + "Z"
+            _trace_prop["timestamp_after"] = datetime.datetime.now(datetime.timezone.utc).isoformat().replace("+00:00", "Z")
             pathlib.Path('.').joinpath('R8.8.7.5-COGNITIVE-PROPOSAL-REAL.json').write_text(json.dumps(_trace_prop, indent=2))
         except Exception as e:
             logger.error(f"Cognitive Engine failure: {e}")

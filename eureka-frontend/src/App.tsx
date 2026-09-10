@@ -31,23 +31,90 @@ import Audit from "./pages/System/Audit";
 import Settings from "./pages/System/Settings";
 
 import UniversalRoot from "./pages/UniversalRoot";
+import RequireAuth from "./components/auth/RequireAuth";
+import { LoginPage, RegisterPage, ForgotPasswordPage, ResetPasswordPage } from "./pages/auth/AuthPages";
+import AdminConsole from "./pages/admin/AdminConsole";
+import AdminLayout from "./pages/admin/AdminLayout";
 
 // Dev-only screenshot/render harness (never registered in production builds).
 const ShotHarness = import.meta.env.DEV
   ? React.lazy(() => import("./pages/ShotHarness"))
   : null;
+const CoreConstellationDemo = import.meta.env.DEV
+  ? React.lazy(() => import("./pages/CoreConstellationDemo"))
+  : null;
+const CognitiveFieldDemo = import.meta.env.DEV
+  ? React.lazy(() => import("./pages/CognitiveFieldDemo"))
+  : null;
+const WhatIfDemo = import.meta.env.DEV
+  ? React.lazy(() => import("./pages/WhatIfDemo"))
+  : null;
+const AuditDemo = import.meta.env.DEV
+  ? React.lazy(() => import("./pages/AuditDemo"))
+  : null;
+const WorkAuditDemo = import.meta.env.DEV
+  ? React.lazy(() => import("./pages/WorkAuditDemo"))
+  : null;
+const ObservabilityConsoleDemo = import.meta.env.DEV
+  ? React.lazy(() => import("./pages/ObservabilityConsoleDemo"))
+  : null;
+
+// Productive observability entry (available in production builds, not DEV-gated).
+const ObservabilityEntry = React.lazy(() => import("./pages/ObservabilityEntry"));
 
 const router = createBrowserRouter([
   {
+    path: "/login",
+    element: <LoginPage />,
+  },
+  {
+    path: "/register",
+    element: <RegisterPage />,
+  },
+  {
+    path: "/forgot-password",
+    element: <ForgotPasswordPage />,
+  },
+  {
+    path: "/reset-password",
+    element: <ResetPasswordPage />,
+  },
+  {
+    path: "/admin",
+    element: <RequireAuth requireAdmin><AdminLayout><AdminConsole /></AdminLayout></RequireAuth>,
+  },
+  {
     path: "/",
-    element: <UniversalRoot />
+    element: <RequireAuth><UniversalRoot /></RequireAuth>
   },
   ...(import.meta.env.DEV && ShotHarness
     ? [{ path: "/__shot", element: <ShotHarness /> }]
     : []),
+  ...(import.meta.env.DEV && CoreConstellationDemo
+    ? [{ path: "/__constellation", element: <CoreConstellationDemo /> }]
+    : []),
+  ...(import.meta.env.DEV && CognitiveFieldDemo
+    ? [{ path: "/__field", element: <CognitiveFieldDemo /> }]
+    : []),
+  ...(import.meta.env.DEV && WhatIfDemo
+    ? [{ path: "/__whatif", element: <WhatIfDemo /> }]
+    : []),
+  ...(import.meta.env.DEV && AuditDemo
+    ? [{ path: "/__audit", element: <AuditDemo /> }]
+    : []),
+  ...(import.meta.env.DEV && WorkAuditDemo
+    ? [{ path: "/__workaudit", element: <WorkAuditDemo /> }]
+    : []),
+  ...(import.meta.env.DEV && ObservabilityConsoleDemo
+    ? [{ path: "/__obs", element: <ObservabilityConsoleDemo /> }]
+    : []),
+  {
+    path: "/observability",
+    element: <RequireAuth><React.Suspense fallback={<div className="p-6 text-[var(--eureka-text-label)]">Loading observability…</div>}><ObservabilityEntry /></React.Suspense></RequireAuth>,
+  },
   {
     path: "/legacy",
-    element: <EurekaShell />,
+    element: <RequireAuth><EurekaShell /></RequireAuth>,
     children: [
       { path: "", element: <Overview /> },
       { path: "cases", element: <CasesList /> },

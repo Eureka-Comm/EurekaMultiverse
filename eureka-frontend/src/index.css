@@ -33,14 +33,46 @@
 }
 
 :root {
-  /* EUREKA light theme (adoptado de DeepSeek Harness — claro) */
+  /* EUREKA dark cosmic theme (por defecto) */
+  --eureka-canvas: #07040f;
+  --eureka-surface: #0e0a1c;
+  --eureka-surface-elevated: #161027;
+  --eureka-surface-selected: #241a3c;
+  --eureka-surface-active: #1c1433;
+
+  /* SIGNALS (neón sobre oscuro) */
+  --eureka-signal-cognitive: #29e0ff;
+  --eureka-signal-semantic: #9b6bff;
+  --eureka-signal-scientific: #61dafb;
+  --eureka-signal-ranking: #ffb03c;
+  --eureka-signal-authority: #ff7a3c;
+  --eureka-signal-freeze: #ffb03c;
+  --eureka-signal-action: #4dff9d;
+  --eureka-signal-warning: #ffb03c;
+  --eureka-signal-blocked: #ff5d5d;
+
+  /* SPATIAL */
+  --eureka-spatial-hairline: rgba(255, 255, 255, 0.10);
+  --eureka-spatial-grid: rgba(255, 255, 255, 0.035);
+  --eureka-spatial-glow: 0 0 20px -5px;
+  --eureka-spatial-halo: 0 0 0 1px;
+
+  /* TYPOGRAPHY */
+  --eureka-text-display: #f3efff;
+  --eureka-text-section: #d9d2f2;
+  --eureka-text-label: #a99fcb;
+  --eureka-text-metric: #ffffff;
+  --eureka-text-technical: #8b83ad;
+  --eureka-text-micro: #6f688f;
+}
+
+/* Override a claro (toggle) */
+.theme-light {
   --eureka-canvas: #f6f8fa;
   --eureka-surface: #ffffff;
   --eureka-surface-elevated: #f0f2f5;
   --eureka-surface-selected: #ddf4ff;
   --eureka-surface-active: #eaeef2;
-
-  /* SIGNALS */
   --eureka-signal-cognitive: #0969da;
   --eureka-signal-semantic: #8250df;
   --eureka-signal-scientific: #0969da;
@@ -50,14 +82,8 @@
   --eureka-signal-action: #1a7f37;
   --eureka-signal-warning: #9a6700;
   --eureka-signal-blocked: #cf222e;
-
-  /* SPATIAL */
   --eureka-spatial-hairline: #d0d7de;
   --eureka-spatial-grid: rgba(0, 0, 0, 0.04);
-  --eureka-spatial-glow: 0 0 20px -5px;
-  --eureka-spatial-halo: 0 0 0 1px;
-
-  /* TYPOGRAPHY */
   --eureka-text-display: #1f2328;
   --eureka-text-section: #424a53;
   --eureka-text-label: #656d76;
@@ -75,6 +101,7 @@ body {
   margin: 0;
   padding: 0;
   overflow: hidden;
+  transition: background-color 0.35s ease, color 0.35s ease;
 }
 
 /* Base structural utility for EUREKA Fabric */
@@ -90,6 +117,15 @@ body {
     linear-gradient(to right, var(--eureka-spatial-grid) 1px, transparent 1px),
     linear-gradient(to bottom, var(--eureka-spatial-grid) 1px, transparent 1px);
   background-size: 24px 24px;
+}
+
+/* EUREKA Identity inputs — white surface, dark readable text, clear focus ring */
+.eureka-auth-input::placeholder { color: #8a8a9c; opacity: 1; }
+.eureka-auth-input:focus-visible {
+  outline: none;
+  border-color: #29e0ff;
+  box-shadow: 0 0 0 3px rgba(41, 224, 255, 0.30);
+  background: #ffffff;
 }
 
 /* Animations (design spec) */
@@ -166,7 +202,7 @@ body {
   color: var(--eureka-signal-cognitive);
 }
 .md-content pre {
-  background: #f6f8fa;
+  background: var(--eureka-surface-elevated);
   border: 1px solid var(--eureka-spatial-hairline);
   border-radius: 6px;
   padding: 0.7em 0.9em;

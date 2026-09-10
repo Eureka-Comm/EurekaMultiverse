@@ -5,6 +5,7 @@ import DeepSeekCopilot from '../components/DeepSeekCopilot';
 import CompensationSurface from '../components/visualizations/CompensationSurface';
 import IntelligenceNetwork from '../components/visualizations/IntelligenceNetwork';
 import CognitiveStoryTab from '../components/cognitive/CognitiveStoryTab';
+import CognitiveConstellation from '../components/cognitive/CognitiveConstellation';
 import CognitiveTimeline from '../components/story/cognitiveViews/CognitiveTimeline';
 import RuntimeTrace from '../components/RuntimeTrace';
 import EMOperationalPipeline from '../components/runtime/EMOperationalPipeline';
@@ -12,12 +13,13 @@ import HITLDecisionWidget from '../components/HITLDecisionWidget';
 import EvolutionHITLWidget from '../components/EvolutionHITLWidget';
 import { API_BASE } from '../lib/apiBase';
 
-type TabId = 'chat' | 'trajectory' | 'cognition' | 'evidence' | 'surfaces' | 'evolution';
+type TabId = 'chat' | 'trajectory' | 'cognition' | 'constellation' | 'evidence' | 'surfaces' | 'evolution';
 
 const TABS: { id: TabId; label: string }[] = [
   { id: 'chat', label: 'Chat' },
   { id: 'trajectory', label: 'Trajectory' },
   { id: 'cognition', label: 'EUREKA COGNITIVE STORY' },
+  { id: 'constellation', label: 'Constelación' },
   { id: 'evidence', label: 'Evidence' },
   { id: 'surfaces', label: 'Decision Surfaces' },
   { id: 'evolution', label: 'Evolución' },
@@ -368,6 +370,11 @@ export default function DynamicWorkspace() {
               {tab === 'cognition' && (
                 <div className="space-y-6">
                   <CognitiveStoryTab />
+                </div>
+              )}
+              {tab === 'constellation' && (
+                <div className="w-full h-[calc(100%-32px)] min-h-[520px] rounded-xl overflow-hidden border border-[var(--eureka-spatial-hairline)]">
+                  <CognitiveConstellation />
                 </div>
               )}
               {tab === 'evidence' && (

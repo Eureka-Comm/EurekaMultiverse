@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useWorkStore } from '../../store/workStore';
-import { Plus, Settings, FolderOpen, Search, SlidersHorizontal, PanelRightClose, PanelRight } from 'lucide-react';
+import { useAuthStore, isAdmin } from '../../store/authStore';
+import { Plus, Settings, FolderOpen, Search, SlidersHorizontal, PanelRightClose, PanelRight, Shield, LogOut } from 'lucide-react';
 
 /**
  * EUREKA left sidebar (estilo DeepSeek Harness, colapsable, iconos SVG funcionales).
@@ -10,17 +11,21 @@ import { Plus, Settings, FolderOpen, Search, SlidersHorizontal, PanelRightClose,
 export default function EurekaSidebar() {
   const activeWork = useWorkStore((state) => state.activeWork);
   const clearWork = useWorkStore((state) => state.clearWork);
+  const { user, logout } = useAuthStore();
   const [collapsed, setCollapsed] = useState(false);
   const workId = activeWork?.work?.workId;
   const status = activeWork?.work?.status;
+  const admin = isAdmin(user?.role);
 
   if (collapsed) {
     return (
       <aside className="w-[56px] min-w-[56px] flex flex-col items-center gap-2 bg-[var(--eureka-canvas)] border-r border-[var(--eureka-spatial-hairline)] h-screen py-3">
         <button onClick={() => setCollapsed(false)} title="Expandir" className="p-2 text-[var(--eureka-text-label)] hover:text-[var(--eureka-text-display)] transition-colors"><PanelRight size={18} /></button>
-        <button onClick={() => clearWork()} title="New Session" className="p-2 text-[var(--eureka-text-label)] hover:text-[var(--eureka-text-display)] transition-colors"><Plus size={18} /></button>
+        <button onClick={() => { clearWork(); window.location.assign('/'); }} title="New Session" className="p-2 text-[var(--eureka-text-label)] hover:text-[var(--eureka-text-display)] transition-colors"><Plus size={18} /></button>
         {workId && <div className="w-5 h-5 rounded-full bg-[var(--eureka-surface-active)] border border-[var(--eureka-spatial-hairline)]" title={workId} />}
         <div className="flex-1" />
+        <button onClick={() => window.location.assign('/admin')} title="Administration" className="p-2 text-[var(--eureka-text-label)] hover:text-[var(--eureka-text-display)] transition-colors"><Shield size={18} /></button>
+        <button onClick={() => void logout()} title="Logout" className="p-2 text-[var(--eureka-text-label)] hover:text-[var(--eureka-text-display)] transition-colors"><LogOut size={18} /></button>
         <button onClick={() => window.location.assign('/legacy/settings')} title="Settings" className="p-2 text-[var(--eureka-text-label)] hover:text-[var(--eureka-text-display)] transition-colors"><Settings size={18} /></button>
       </aside>
     );
@@ -40,7 +45,7 @@ export default function EurekaSidebar() {
       {/* NEW SESSION */}
       <div className="px-3">
         <button
-          onClick={() => clearWork()}
+          onClick={() => { clearWork(); window.location.assign('/'); }}
           className="w-full flex items-center justify-center gap-2 text-sm font-medium text-[var(--eureka-text-display)] bg-white border border-[var(--eureka-spatial-hairline)] rounded-full py-2 hover:bg-[var(--eureka-surface-active)] transition-colors"
         >
           <Plus size={16} /> New Session
@@ -66,10 +71,33 @@ export default function EurekaSidebar() {
         )}
       </div>
 
+      {/* ADMINISTRATION (role-gated in UI; backend enforces server-side) */}
+      {admin && (
+        <div className="px-3">
+          <button
+            onClick={() => window.location.assign('/admin')}
+            className="w-full flex items-center justify-center gap-2 text-sm font-medium text-[var(--eureka-text-label)] border border-[var(--eureka-spatial-hairline)] rounded-full py-2 hover:bg-[var(--eureka-surface-active)] hover:text-[var(--eureka-text-display)] transition-colors"
+          >
+            <Shield size={16} /> Administration
+          </button>
+        </div>
+      )}
+
       {/* SETTINGS */}
       <div className="px-3 py-3 border-t border-[var(--eureka-spatial-hairline)]">
         <button onClick={() => window.location.assign('/legacy/settings')} className="flex items-center gap-2 text-sm text-[var(--eureka-text-label)] hover:text-[var(--eureka-text-display)] transition-colors px-2 py-1.5">
           <Settings size={15} /> Settings
+        </button>
+      </div>
+
+      {/* ACCOUNT / SESSION */}
+      <div className="px-3 py-3 border-t border-[var(--eureka-spatial-hairline)]">
+        <div className="flex items-center gap-2 px-2 text-[10px] text-[var(--eureka-text-label)]">
+          <span className="truncate">{user?.email ?? 'anonymous'}</span>
+          <span className="ml-auto text-[var(--eureka-text-micro)]">{user?.role}</span>
+        </div>
+        <button onClick={() => void logout()} className="flex items-center gap-2 text-sm text-[var(--eureka-text-label)] hover:text-[var(--eureka-text-display)] transition-colors px-2 py-1.5">
+          <LogOut size={15} /> Logout
         </button>
       </div>
     </aside>

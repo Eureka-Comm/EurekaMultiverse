@@ -7,6 +7,7 @@ from .artifact_engine import ArtifactEngine
 from .descriptor import EMDescriptor
 from .predictor import EMPredictor
 from .cognitive_engine import TestDoubleCognitiveEngine
+from .effect_policy import EffectBoundary, DryRunContext, ExecutionMode, PolicyError, default_boundary
 import datetime
 import logging
 
@@ -57,6 +58,11 @@ class WorkRuntime:
         self.analytics_engine = ExplanatoryAnalyticsEngine()
         self.story_engine = StoryEngine()
         self.artifact_engine = ArtifactEngine()
+        # LS-SCN-03: single structural gate below agent/LLM intent & above mutable side effects.
+        # NORMAL mode is permissive (unchanged); DRY_RUN is strict fail-closed. `_dry_run` is set
+        # per-advance by any future controlled context; default False preserves current behavior.
+        self._effect_boundary: EffectBoundary = default_boundary()
+        self._dry_run: bool = False
         
         engine = cognitive_engine or TestDoubleCognitiveEngine()
         self.descriptor = EMDescriptor(cognitive_engine=engine)
@@ -65,16 +71,28 @@ class WorkRuntime:
         from .actioner import EMActioner
         from .installer import EMInstaller
         from .publisher import EMPublisher
-        from .controlled_execution_adapter import ControlledExecutionAdapter
+        from .governed_execution_adapter import GovernedExecutionAdapter
         from .prescriptor import EMPrescriptor
         self.actioner = EMActioner(cognitive_engine=engine)
-        self.installer = EMInstaller(ControlledExecutionAdapter())
-        self.publisher = EMPublisher(cognitive_engine=engine)
+        # PRODUCTION executor: governed, observable, durable (NOT the Controlled test-double). The
+        # mode is derived from this runtime's dry-run flag; a real work execution uses REAL_EXECUTION.
+        self.installer = EMInstaller(GovernedExecutionAdapter(
+            boundary=self._effect_boundary,
+            mode=ExecutionMode.DRY_RUN if self._dry_run else ExecutionMode.REAL_EXECUTION))
+        self.publisher = EMPublisher(cognitive_engine=engine, boundary=self._effect_boundary,
+                                     mode=ExecutionMode.DRY_RUN if self._dry_run else ExecutionMode.REAL_EXECUTION)
         self.prescriptor = EMPrescriptor(cognitive_engine=engine)
 
 
     def advance(self, canonical: CanonicalWorkState) -> CanonicalWorkState:
-        
+        # Sync the governed executor's Q4 mode with this runtime's dry-run flag: DRY_RUN blocks the
+        # real effect, REAL_EXECUTION allows the governed, observable artifact write.
+        try:
+            self.installer.adapter.mode = ExecutionMode.DRY_RUN if self._dry_run else ExecutionMode.REAL_EXECUTION
+            self.publisher.mode = ExecutionMode.DRY_RUN if self._dry_run else ExecutionMode.REAL_EXECUTION
+        except AttributeError:
+            pass  # a (test) adapter/publisher with no `mode` attribute simply runs as-is
+
         for s in canonical.execution_plan.steps:
             pass
         result_required = any(step.produces_result for step in canonical.execution_plan.steps)
@@ -181,7 +199,7 @@ class WorkRuntime:
                         canonical.execution_phase = "WAITING_FOR_EVIDENCE"
                     else:
                         canonical.execution_phase = "RUNNING"
-                        canonical.waiting_reason = None
+                        canonical.waiting_reason = ""   # schema is `str = ""`; None would fail reload
                         canonical.waiting_for_evidence_ids = []
                         
                     # Check if step execution caused a terminal/waiting state
@@ -479,6 +497,27 @@ class WorkRuntime:
         return True
 
     def _execute_step(self, canonical: CanonicalWorkState, step: ExecutionStep):
+        # LS-SCN-03: enforce the effect boundary BEFORE any capability handler can run.
+        # In DRY_RUN a MUTATE/UNKNOWN capability is blocked (fail-closed) and never reaches the
+        # real handler. In NORMAL mode (default) behavior is unchanged.
+        if self._dry_run:
+            try:
+                self._effect_boundary.enforce(DryRunContext(
+                    capability_id=step.capability_id,
+                    target=step.target or "",
+                    mode=ExecutionMode.DRY_RUN,
+                    execution_level=0,
+                    required_execution_level=0,
+                ))
+            except PolicyError as err:
+                step.status = "BLOCKED"
+                canonical.conditions.append(StateCondition(
+                    status="BLOCKED",
+                    reason_code=err.reason_code,
+                    message=f"Dry-run blocked: {err.message}",
+                    target=step.capability_id,
+                ))
+                return
         # Determine execution logic
         if step.capability_id in ["adjust_acfl_weights"]:
             # Route to ACFL Engine
@@ -580,7 +619,7 @@ class WorkRuntime:
                 uncertainty=res.uncertainty,
                 validity_conditions=res.validity_conditions,
                 human_decision_required=res.human_decision_required,
-                required_data=[d if isinstance(d, dict) else d.model_dump() if hasattr(d, "model_dump") else d.dict() for d in res.required_data],
+                required_data=[d if isinstance(d, dict) else d.model_dump() if hasattr(d, "model_dump") else d for d in res.required_data],
                 invalidated_reason=res.invalidated_reason,
                 invalidated_predictions=res.invalidated_predictions,
                 dependent_prescriptions=res.dependent_prescriptions

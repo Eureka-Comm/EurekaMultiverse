@@ -82,7 +82,7 @@ class EMDescriptor:
                 extraction_method="USER_CONTEXT",
                 parser_id="ContextParser",
                 parser_version="1.0",
-                extraction_timestamp=_dt.datetime.utcnow().isoformat() + "Z"
+                extraction_timestamp=_dt.datetime.now(_dt.timezone.utc).isoformat().replace("+00:00", "Z")
             )
             canonical.extracted_evidence["EVI-CONTEXT"] = ctx
             evidence_units.append(ctx)

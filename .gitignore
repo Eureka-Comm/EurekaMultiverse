@@ -45,3 +45,7 @@ _backup*/
 /*.json
 /LOOP_*.json
 /R8.8.7.5-*.json
+
+# ===== Runtime data (works / identity) — NEVER commit: user PII + MFA secrets + session tokens =====
+/data/
+

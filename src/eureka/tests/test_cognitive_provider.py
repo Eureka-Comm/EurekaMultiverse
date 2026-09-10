@@ -21,7 +21,7 @@ from src.eureka.universe.cognitive_provider import (
     ProviderMetadata,
     AgentDefinition,
 )
-from src.eureka.universe.canonical_state import CanonicalWorkState
+from src.eureka.universe.canonical_state import CanonicalWorkState, EurekaWork
 from src.eureka.tests.helpers.fake_provider import FakeProvider
 
 # Helper to create a minimal AgentDefinition used by the FakeProvider
@@ -51,8 +51,15 @@ def test_fake_provider_success_proposal_has_no_prohibited_fields():
 
 # ---------- G5: Immutability ----------
 def test_provider_does_not_mutate_canonical_state():
-    # Create a simple canonical state instance
-    original_state = CanonicalWorkState()
+    # Create a valid canonical state instance (the canonical schema requires a work).
+    work = EurekaWork(
+        work_id="WORK-PROBE",
+        title="Immutability probe",
+        user_intent="deterministic probe",
+        task_category="GENERAL",
+        problem_statement="Ensure the provider does not mutate canonical state.",
+    )
+    original_state = CanonicalWorkState(work=work)
     # Ensure it has some data (even if empty) – we rely on deepcopy semantics
     snapshot = copy.deepcopy(original_state)
 

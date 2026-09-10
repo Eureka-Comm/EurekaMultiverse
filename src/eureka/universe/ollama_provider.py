@@ -37,7 +37,7 @@ class OllamaProvider(CognitiveProvider):
         }
         import json, datetime, pathlib
         _trace_req = {
-            "timestamp": datetime.datetime.utcnow().isoformat() + "Z",
+            "timestamp": datetime.datetime.now(datetime.timezone.utc).isoformat().replace("+00:00", "Z"),
             "endpoint": f"{self.base_url}/api/generate",
             "model": self.model_name,
             "request_payload": request_payload,
@@ -63,7 +63,7 @@ class OllamaProvider(CognitiveProvider):
         self._last_raw_response = raw_response
         
         _trace_res = {
-            "timestamp": datetime.datetime.utcnow().isoformat() + "Z",
+            "timestamp": datetime.datetime.now(datetime.timezone.utc).isoformat().replace("+00:00", "Z"),
             "status": response.status_code,
             "response_body": raw_response
         }
@@ -129,7 +129,7 @@ class OllamaProvider(CognitiveProvider):
         }
         try:
             proposal = SemanticProposal(**data)
-            _trace_trans["semantic_proposal"] = proposal.dict()
+            _trace_trans["semantic_proposal"] = proposal.model_dump()
             pathlib.Path('.').joinpath('R8.8.7.5-SEMANTIC-PROPOSAL-REAL-TRACE.json').write_text(json.dumps(_trace_trans, indent=2))
             self._last_proposal = proposal
             return ProviderResult.SUCCESS
@@ -219,7 +219,7 @@ class OllamaProvider(CognitiveProvider):
         }
         try:
             proposal = SemanticProposal(**data)
-            _trace_trans["semantic_proposal"] = proposal.dict()
+            _trace_trans["semantic_proposal"] = proposal.model_dump()
             pathlib.Path('.').joinpath('R8.8.7.5-SEMANTIC-PROPOSAL-REAL-TRACE.json').write_text(json.dumps(_trace_trans, indent=2))
             self._last_proposal = proposal
             return ProviderResult.SUCCESS

@@ -1,16 +1,26 @@
 import uuid
 import hashlib
 import json
-from typing import Optional
+import os
+from typing import Optional, Dict, Any
 
 from .problem_model import ProblemModel, CognitiveTask
 from .canonical_state import CanonicalWorkState
 from .cognitive_engine import CognitiveEngine
 from .publication_model import PublicationInput, PublicationState, FrozenResult, PublishedResult, PublicationSection
+from .canonical_identity import canonical_state_fingerprint
+from .effect_policy import (EffectBoundary, DryRunContext, ExecutionMode, PolicyError,
+                            default_boundary, guarded_dump_json)
 
 class EMPublisher:
-    def __init__(self, cognitive_engine: CognitiveEngine):
+    def __init__(self, cognitive_engine: CognitiveEngine,
+                 boundary: Optional[EffectBoundary] = None,
+                 publication_dir: str = "data/publications",
+                 mode: ExecutionMode = ExecutionMode.REAL_EXECUTION):
         self.cognitive_engine = cognitive_engine
+        self._boundary = boundary or default_boundary()
+        self.publication_dir = publication_dir
+        self.mode = mode
 
     def execute_task(self, problem: ProblemModel, task: CognitiveTask, canonical_state: CanonicalWorkState) -> CanonicalWorkState:
         # Gate R8.1: Relevance
@@ -269,7 +279,13 @@ class EMPublisher:
             if step.step_id == task.task_id:
                 step.status = "COMPLETED"
                 break
-                
+
+        # Materialize a DURABLE, signed, governed publication artifact (the real, observable publish
+        # effect) AFTER the canonical result is fully published, so the artifact's canonical identity
+        # (Q2 fingerprint) reflects the final published state. Tamper-evident via the reused
+        # `_freeze_signature`; DRY_RUN blocks it.
+        self._materialize_publication_artifact(canonical_state, published, frozen)
+
         return canonical_state
 
     def _freeze_signature(self, canonical_state: CanonicalWorkState) -> str:
@@ -292,6 +308,79 @@ class EMPublisher:
         return hashlib.sha256(
             json.dumps(payload, sort_keys=True, default=str).encode("utf-8")
         ).hexdigest()
+
+    @staticmethod
+    def _signature_from_frozen(frozen: FrozenResult) -> str:
+        """Recompute the freeze (canonical-content) signature from a FrozenResult snapshot, so the
+        integrity of a stored/published frozen snapshot can be verified independently (tamper-evident)."""
+        payload = {
+            "findings": list(frozen.validated_knowledge),
+            "contradictions": list(frozen.contradictions),
+            "unknowns": list(frozen.unknowns),
+            "predictions": list(frozen.validated_predictions),
+            "prescriptions": list(frozen.validated_prescriptions),
+            "action_plan": frozen.validated_action_plan,
+            "execution_result": frozen.execution_result,
+        }
+        return hashlib.sha256(
+            json.dumps(payload, sort_keys=True, default=str).encode("utf-8")
+        ).hexdigest()
+
+    def _materialize_publication_artifact(self, canonical_state: CanonicalWorkState,
+                                          published: PublishedResult, frozen: Optional[FrozenResult]) -> Optional[str]:
+        """Durable, declared, governed publication artifact (the real publish effect).
+
+        - Deterministic path by the reused ``_freeze_signature`` (content identity): unchanged content ->
+          same artifact (idempotent, immutable); changed content -> a NEW signed artifact (revision).
+        - Crosses Q4 (capability ``publisher.publish``, MUTATE): DRY_RUN blocks it (no artifact);
+          REAL_EXECUTION/NORMAL + a runtime PUBLISHER authorization allows it.
+        - Tamper-evident identity: the artifact stores ``canonical_content_signature``; the frozen
+          snapshot inside can be re-checked via ``_signature_from_frozen``.
+        Returns the artifact path on success, else None (blocked/failed)."""
+        work_id = canonical_state.work.work_id if canonical_state.work else "UNKNOWN"
+        sig = frozen.freeze_signature if frozen else "no-freeze"
+        canonical_identity = canonical_state_fingerprint(canonical_state)
+        artifact_path = os.path.join(self.publication_dir, f"{work_id}-{sig[:12]}.json")
+
+        # Idempotency: the deterministic path means unchanged content -> the SAME artifact is reused
+        # (immutable snapshot, no duplicate publication); changed content -> a NEW path -> new revision.
+        if os.path.exists(artifact_path):
+            published.artifact = artifact_path
+            return artifact_path
+
+        artifact_content = {
+            "artifact_kind": "CANONICAL_PUBLICATION_ARTIFACT",
+            "work_id": work_id,
+            "canonical_state_identity": canonical_identity,
+            "revision": getattr(canonical_state, "revision", None),
+            "publication_id": published.published_id,
+            "frozen_result_ref": published.frozen_result_ref,
+            "canonical_content_signature": sig,
+            "publisher_version": "EUREKA_EM_PUBLISHER_V5.1",
+            "publication_status": "PUBLISHED",
+            "frozen_result": frozen.model_dump(mode="json") if frozen else None,
+            "published": published.model_dump(mode="json") if published else None,
+            "provenance": ["publisher:EMPublisher", f"work:{work_id}", f"signature:{sig}"],
+        }
+
+        authorization = f"PUBLISHER:{work_id}"
+        ctx = DryRunContext(capability_id="publisher.publish", target=f"fs:publication:{work_id}",
+                            mode=self.mode, authorization=authorization,
+                            execution_level=1, required_execution_level=1)
+        try:
+            self._boundary.enforce(ctx)   # classifier + policy gate FIRST (never write before the gate)
+            os.makedirs(self.publication_dir, exist_ok=True)
+            guarded_dump_json(self._boundary, artifact_path, artifact_content,
+                              mode=self.mode, authorization=authorization,
+                              capability_id="publisher.publish", target="fs")
+        except (PolicyError, OSError) as e:
+            # DRY_RUN / denied / IO failure -> no artifact (honest)
+            published.artifact = None
+            return None
+
+        # success: point the published result at the durable artifact.
+        published.artifact = artifact_path
+        return artifact_path
 
     def _fallback_summary(self, problem, canonical_state) -> str:
         """LS52: build a truthful summary from the canonical data (no hallucination)."""

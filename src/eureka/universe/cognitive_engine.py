@@ -193,7 +193,7 @@ def record_runtime_call(canonical_state, *, em, capability_id, call_id, model=""
             latency_ms=latency_ms,
             output_schema=output_schema,
             validation_status=validation_status,
-            timestamp=datetime.datetime.utcnow().isoformat() + "Z",
+            timestamp=datetime.datetime.now(datetime.timezone.utc).isoformat().replace("+00:00", "Z"),
             status=status,
         )
         canonical_state.runtime_metadata.append(meta)
@@ -1735,7 +1735,7 @@ Evaluate applicability."""
                         f"Las predicciones no fueron evaluadas (NOT_EVALUATED), la decisión humana está pendiente (PENDING) "
                         f"y no se ejecutó ninguna acción (NOT_EXECUTED).")
                     sections.insert(0, PublicationSection(
-                        section_id=f"SEC-{_dt.datetime.utcnow().strftime('%H%M%S')}-A",
+                        section_id=f"SEC-{_dt.datetime.now(_dt.timezone.utc).strftime('%H%M%S')}-A",
                         section_type="ANSWER",
                         content=answer_txt,
                         status="VALIDATED"
@@ -1748,7 +1748,7 @@ Evaluate applicability."""
             has_recs = any(sec.section_type == "RECOMMENDATIONS" for sec in sections)
             if not has_findings and findings:
                 sections.insert(0, PublicationSection(
-                    section_id=f"SEC-{_dt.datetime.utcnow().strftime('%H%M%S')}-F",
+                    section_id=f"SEC-{_dt.datetime.now(_dt.timezone.utc).strftime('%H%M%S')}-F",
                     section_type="FINDINGS",
                     content="\n".join(f"- {x}" for x in findings),
                     status="VALIDATED"
@@ -1756,14 +1756,14 @@ Evaluate applicability."""
             if not has_recs and ap:
                 secs_txt = "; ".join(f"{getattr(a,'action_id','')}: {getattr(a,'description','')} (owner {getattr(a,'owner','N/A')})" for a in ap.actions[:10])
                 sections.append(PublicationSection(
-                    section_id=f"SEC-{_dt.datetime.utcnow().strftime('%H%M%S')}-R",
+                    section_id=f"SEC-{_dt.datetime.now(_dt.timezone.utc).strftime('%H%M%S')}-R",
                     section_type="RECOMMENDATIONS",
                     content=(f"A partir del objetivo '{objective}' y el plan de accion validado ({ap.plan_id}):\n" + "\n".join(f"- {x}" for x in secs_txt.split('; ')) if secs_txt else "Sin acciones en el plan de accion."),
                     status="VALIDATED"
                 ))
             if not any(sec.section_type == "EXECUTION_RESULT" for sec in sections):
                 sections.append(PublicationSection(
-                    section_id=f"SEC-{_dt.datetime.utcnow().strftime('%H%M%S')}-X",
+                    section_id=f"SEC-{_dt.datetime.now(_dt.timezone.utc).strftime('%H%M%S')}-X",
                     section_type="EXECUTION_RESULT",
                     content=ex_txt,
                     status="VALIDATED"
@@ -1844,7 +1844,7 @@ Return ONLY a valid JSON dictionary mapping variable names to float values.
                 "target": validated_pred.target_variable,
                 "status": validated_pred.validation_status,
                 "required_data": list(validated_pred.input_requirements.keys()),
-                "uncertainty": validated_pred.uncertainty.dict() if hasattr(validated_pred.uncertainty, 'dict') else None
+                "uncertainty": validated_pred.uncertainty.model_dump() if hasattr(validated_pred.uncertainty, 'model_dump') else None
             }
             
             if validated_pred.validation_status == "VALIDATED":

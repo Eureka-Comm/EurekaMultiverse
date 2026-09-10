@@ -67,7 +67,7 @@ export function ProvenanceChain({
             {s.artifact ? (
               <button
                 onClick={() => onSelect?.(s.artifact!)}
-                className="group min-w-[118px] max-w-[150px] flex flex-col items-start gap-1 rounded-lg border border-[var(--eureka-spatial-hairline)] bg-white px-2.5 py-2 hover:ring-2 hover:ring-[var(--eureka-signal-cognitive)] transition-shadow text-left"
+                className="group min-w-[118px] max-w-[150px] flex flex-col items-start gap-1 rounded-lg border border-[var(--eureka-spatial-hairline)] bg-[var(--eureka-surface-elevated)] px-2.5 py-2 hover:ring-2 hover:ring-[var(--eureka-signal-cognitive)] transition-shadow text-left"
               >
                 <span className="text-[8px] font-mono uppercase tracking-wider text-[var(--eureka-text-micro)]">
                   {s.title}

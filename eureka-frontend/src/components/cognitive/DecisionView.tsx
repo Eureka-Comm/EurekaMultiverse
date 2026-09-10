@@ -44,7 +44,7 @@ export function DecisionView({ dto }: { dto: CognitiveProjectionDTO }) {
                       ? 'border-[var(--eureka-signal-authority)] bg-[var(--eureka-signal-authority)]/5'
                       : isRec
                         ? 'border-[var(--eureka-signal-cognitive)] bg-[var(--eureka-signal-cognitive)]/5'
-                        : 'border-[var(--eureka-spatial-hairline)] bg-white'
+                        : 'border-[var(--eureka-spatial-hairline)] bg-[var(--eureka-surface-elevated)]'
                   }`}
                 >
                   <span className="font-mono text-[var(--eureka-text-display)] shrink-0">{a.id}</span>
@@ -66,7 +66,7 @@ export function DecisionView({ dto }: { dto: CognitiveProjectionDTO }) {
       </div>
 
       {/* HUMAN DECISION */}
-      <div className="rounded-lg border border-[var(--eureka-signal-authority)] bg-white p-4">
+      <div className="rounded-lg border border-[var(--eureka-signal-authority)] bg-[var(--eureka-surface-elevated)] p-4">
         <div className="flex items-center justify-between gap-2 mb-2">
           <div className="text-[10px] font-bold tracking-widest text-[var(--eureka-signal-authority)] uppercase">
             HUMAN DECISION

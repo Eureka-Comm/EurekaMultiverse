@@ -497,7 +497,7 @@ ${governed}`;
   }, [isWaiting]);
 
   return (
-    <div className="flex flex-col h-full bg-white">
+    <div className="flex flex-col h-full bg-[var(--eureka-canvas)]">
       <div className="flex-1 min-h-0 px-[9%] py-4 overflow-y-auto overflow-x-hidden space-y-3">
         {activeWork && (
           <div className="flex justify-end">
@@ -587,7 +587,7 @@ ${governed}`;
           const hasFollowUp = userCount > 1;
           if ((activeWork as any)?.work?.status === 'COMPLETED' && !hasFollowUp) {
             return (
-              <div data-executive-cognitive-answer className="rounded-lg border border-[var(--eureka-spatial-hairline)] bg-white p-4 flex items-center justify-between gap-3 flex-wrap">
+              <div data-executive-cognitive-answer className="rounded-lg border border-[var(--eureka-spatial-hairline)] bg-[var(--eureka-surface)] p-4 flex items-center justify-between gap-3 flex-wrap">
                 <div className="text-[11px] font-mono uppercase tracking-wider text-[var(--eureka-text-label)]">
                   ✓ Análisis completado · resultado disponible
                 </div>
@@ -614,7 +614,7 @@ ${governed}`;
             <button onClick={() => setSelectedFile(null)} disabled={isWaiting} className="text-red-500 hover:text-red-400 font-bold px-2 disabled:opacity-50">X</button>
           </div>
         )}
-        <div className="flex items-center gap-3 bg-white border border-[var(--eureka-spatial-hairline)] rounded-full px-5 py-4 shadow-[0_1px_2px_rgba(0,0,0,0.04),0_8px_20px_-6px_rgba(0,0,0,0.10)]">
+        <div className="flex items-center gap-3 bg-[var(--eureka-surface-elevated)] border border-[var(--eureka-spatial-hairline)] rounded-full px-5 py-4 shadow-[0_1px_2px_rgba(0,0,0,0.04),0_8px_20px_-6px_rgba(0,0,0,0.10)]">
           <input type="file" ref={fileInputRef} className="hidden" onChange={(e) => { if (e.target.files && e.target.files.length > 0) setSelectedFile(e.target.files[0]); }} />
           <button
             onClick={() => fileInputRef.current?.click()}

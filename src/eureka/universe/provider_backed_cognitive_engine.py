@@ -49,7 +49,7 @@ class ProviderBackedCognitiveEngine(CognitiveEngine):
             # Trace provider input (payload and agent definition)
             import json, datetime, pathlib
             _trace_input = {
-                "timestamp": datetime.datetime.utcnow().isoformat() + "Z",
+                "timestamp": datetime.datetime.now(datetime.timezone.utc).isoformat().replace("+00:00", "Z"),
                 "stage": "provider_input",
                 "agent_def": {
                     "agent_id": agent_def.agent_id,
@@ -79,10 +79,10 @@ class ProviderBackedCognitiveEngine(CognitiveEngine):
         proposal_obj = self.provider.last_proposal()
         import json, datetime, pathlib
         _trace_response = {
-            "timestamp": datetime.datetime.utcnow().isoformat() + "Z",
+            "timestamp": datetime.datetime.now(datetime.timezone.utc).isoformat().replace("+00:00", "Z"),
             "stage": "provider_response",
             "raw_response": raw_resp,
-            "proposal": json.loads(json.dumps(proposal_obj.dict())) if proposal_obj else None
+            "proposal": json.loads(json.dumps(proposal_obj.model_dump())) if proposal_obj else None
         }
         pathlib.Path('.').joinpath('R8.8.7.5-OLLAMA-RESPONSE-TRACE.json').write_text(json.dumps(_trace_response, indent=2))
         # Return the proposal as before

@@ -18,8 +18,27 @@ from src.eureka.universe.orchestrator import WorkOrchestrator
 from src.eureka.universe.work_runtime import WorkRuntime
 from src.eureka.universe.canonical_state import StateCondition
 from src.eureka.universe.artifact_exporter import export_work, SUPPORTED_FORMATS
+from fastapi import APIRouter
+from src.eureka.universe.scenario_transport import make_router as _make_scenario_router
+from src.eureka.universe.scenario_service import ScenarioService
+from src.eureka.universe.scenario_repository import ScenarioRepository
+from src.eureka.identity import (make_auth_router, make_admin_router, identity_config,
+                                 IdentityStore)
 
 app = FastAPI(title="EUREKA Universal Work Runtime")
+# Scenario What-If API — mounted ON the single main FastAPI app (no second server/app).
+# Router -> ScenarioService -> ScenarioLifecycle -> ScenarioRuntime -> ACFL -> ProjectedArtifact.
+# Storage is a bounded, file-backed ScenarioRepository (consistent with the repo's JSON convention).
+_scenario_parent = APIRouter()
+# work_resolver: Scenario WHAT-IF can resolve a REAL canonical work from the main in-memory store
+# (works_db) by work_id — the existing Work authority. The client never supplies canonical state.
+_scenario_parent.include_router(
+    _make_scenario_router(
+        ScenarioService(repository=ScenarioRepository()),
+        work_resolver=lambda work_id: works_db.get(work_id),
+    )
+)
+app.include_router(_scenario_parent, prefix="/api")
 
 # CORS is configurable via EUREKA_CORS_ORIGINS (comma-separated origins). The default is a
 # safe local-dev allow-list (localhost/127.0.0.1 on the frontend and backend ports) — NOT a
@@ -42,6 +61,21 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# --------------------------------------------------------------------------- #
+# Security headers (safe, must not break the existing SPA). CSP/HSTS are set at the reverse-proxy
+# layer for production; here we apply the response headers that are safe for any origin.
+# --------------------------------------------------------------------------- #
+_http_only = os.environ.get("EUREKA_SECURE_COOKIES", "false").lower() == "true"
+
+@app.middleware("http")
+async def _security_headers(request, call_next):
+    response = await call_next(request)
+    response.headers["X-Content-Type-Options"] = "nosniff"
+    response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
+    if _http_only:
+        response.headers["Strict-Transport-Security"] = "max-age=63072000; includeSubDomains; preload"
+    return response
 
 # Global registries and engines
 cr = CapabilityRegistry()
@@ -68,13 +102,28 @@ orchestrator = WorkOrchestrator(cr, cognitive_engine)
 runtime = WorkRuntime(cognitive_engine=cognitive_engine)
 
 # In-memory store for works and evidence
-works_db = {}
+# The Work authority is DURABLE (restart-safe): `works_db` is a WorkStore, NOT a plain dict. It keeps
+# the same dict-like surface (`.get` / `[]` / `in`) used by the work endpoints, the Scenario work_id
+# resolver and the evolution API, so there is still ONE Work authority — but it survives a restart.
+from src.eureka.universe.work_store import WorkStore
+works_db = WorkStore(os.environ.get("EUREKA_WORK_STORAGE_DIR", "data/works"))
 evidence_store = {}
 evidence_work_index = {} # Map[evidence_id, set(work_ids)]
 
 # Supervised evolution loop (multi-layer orchestrator + HITL gate).
 from src.eureka.evolution.api import create_evolution_api
 app.include_router(create_evolution_api(works_db))
+
+# --------------------------------------------------------------------------- #
+# EUREKA IDENTITY & ACCESS — distinct domain authority (users/sessions/auth-events/tokens/MFA).
+# Durable + restart-safe; mounted on the SAME app. USER identity is NEVER canonical identity.
+# --------------------------------------------------------------------------- #
+_auth_cfg = identity_config()
+identity_store = IdentityStore(_auth_cfg["storage_dir"])
+app.state.identity_store = identity_store
+app.state.identity_cookie = _auth_cfg["session_cookie"]
+app.include_router(make_auth_router(identity_store, _auth_cfg))
+app.include_router(make_admin_router(identity_store, _auth_cfg))
 
 class IntakeRequest(BaseModel):
     user_intent: str
@@ -260,7 +309,7 @@ def _process_state(canonical, tool_call_id: Optional[str] = None):
 
 from src.eureka.universe.canonical_state import Evidence, ExtractedEvidence, build_core_analysis
 from src.eureka.universe.evidence_fabric import EvidenceParserRegistry
-from datetime import datetime
+from datetime import datetime, timezone
 import asyncio
 from fastapi import BackgroundTasks
 
@@ -365,7 +414,7 @@ async def upload_evidence(file: UploadFile, background_tasks: BackgroundTasks):
             ingestion_status="INGESTED",
             extraction_status="NOT_STARTED",
             content_reference=file_path,
-            created_at=datetime.utcnow().isoformat(),
+            created_at=datetime.now(timezone.utc).isoformat(),
             provenance=[f"Ingested via /api/evidence with SHA256: {sha256}"]
         )
         
@@ -442,7 +491,7 @@ async def provide_human_input(work_id: str, req: HumanInputRequest, background_t
             selected_alternative_id=None if req.value == "REJECT_ALL" else req.value,
             selected_prescription_id=None,
             rationale=req.rationale,
-            timestamp=datetime.datetime.utcnow().isoformat()
+            timestamp=datetime.datetime.now(datetime.timezone.utc).isoformat()
         )
         
         if canonical.decision_points:
@@ -474,7 +523,7 @@ async def provide_human_input(work_id: str, req: HumanInputRequest, background_t
                 matched = next((a for a in presc.alternatives if a.alternative_id == req.value), None)
                 if matched:
                     presc.selected_alternative = matched
-                    presc.decision_rule.status = "OVERRIDDEN"
+                    presc.decision_rule.status = "HUMAN_PROVIDED"   # valid literal (was OVERRIDDEN)
                     presc.decision_rule.rule_type = "HUMAN"
                     presc.decision_rule.authority = "HUMAN_OPERATOR"
                     presc.decision_rule.description = req.rationale
@@ -495,7 +544,7 @@ async def provide_human_input(work_id: str, req: HumanInputRequest, background_t
                 decision_type="PARAMETER",
                 selected_alternative_id=None,
                 selected_prescription_id=None,
-                timestamp=datetime.datetime.utcnow().isoformat()
+                timestamp=datetime.datetime.now(datetime.timezone.utc).isoformat()
             )
         # Expect value to be a dict of parameter changes
         if isinstance(req.value, dict):
@@ -590,6 +639,10 @@ async def run_work_background(work_id: str):
         # and the pipeline looks FROZEN/stuck while a slow LLM call is in flight.
         loop = asyncio.get_running_loop()
         await loop.run_in_executor(None, _process_state, canonical)
+        # Durability: persist the work after each runtime step so the durable authority reflects
+        # the LATEST canonical state (the scenario seam binds to this stable snapshot; a restart
+        # loads the same state). This is a write-through via the ONE Work authority (no new store).
+        works_db[work_id] = canonical
         print(f"After process: status={canonical.status}")
         # Yield to event loop to allow API polling (observability)
         await asyncio.sleep(0.5)
@@ -743,6 +796,28 @@ def get_work_state(work_id: str):
         raise HTTPException(status_code=404, detail="Work not found")
     # F-1: GET /state is a pure read — it must NOT advance the runtime (no mutation).
     return _project_state(works_db[work_id])
+
+@app.get("/api/work/{work_id}/publication")
+def get_work_publication(work_id: str):
+    """READ-ONLY, VERIFIED consumption of the durable, signed publication artifact(s) for a Work.
+
+    Resolves the artifact SERVER-SIDE by work_id and verifies schema + integrity (via the reused
+    `_freeze_signature`/`_signature_from_frozen`) + currentness. Never mutates; never executes.
+    """
+    from src.eureka.universe.publication_consumption import build_publication_consumption
+    try:
+        return build_publication_consumption(works_db, runtime.publisher, work_id)
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail=str(e))
+
+@app.get("/api/work/{work_id}/audit")
+def get_work_audit(work_id: str):
+    """READ-ONLY canonical observability: Work → Execution → Result → Publish → Consumption/verify."""
+    from src.eureka.universe.work_observability import build_work_audit
+    try:
+        return build_work_audit(works_db, runtime.publisher, work_id)
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail=str(e))
 
 @app.post("/api/work/{work_id}/advance")
 def advance_work(work_id: str):
@@ -911,7 +986,7 @@ def attach_evidence_to_work(work_id: str, payload: dict):
         source_id=evidence_id,
         status="REAL",
         description=f"Evidence {filename} attached to work.",
-        generated_at=__import__('datetime').datetime.utcnow().isoformat()
+        generated_at=__import__('datetime').datetime.now(__import__('datetime').timezone.utc).isoformat()
     ))
     
     # We may want to mark the work as READY so the runtime can evaluate it again

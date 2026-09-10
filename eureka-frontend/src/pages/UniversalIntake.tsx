@@ -55,7 +55,7 @@ useEffect(() => {
   };
 
   return (
-    <div className="min-h-screen bg-white text-[var(--eureka-text-display)] p-12 flex flex-col items-center justify-center">
+    <div className="min-h-screen bg-[var(--eureka-canvas)] text-[var(--eureka-text-display)] p-12 flex flex-col items-center justify-center">
       <div className="w-full max-w-4xl space-y-16">
         <div className="text-center space-y-4">
           <h1 className="text-5xl font-light tracking-tight">EUREKA MULTIVERSE</h1>

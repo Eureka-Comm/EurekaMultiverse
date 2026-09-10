@@ -49,6 +49,14 @@ export type EdgeSemantic =
   | 'executed_as'
   | 'frozen_as';
 
+/**
+ * Edge classification (§12 of the CONSTELACIÓN contract). Every edge must answer "what evidence or
+ * contract justifies this relation?" — OBSERVED (real evidence), CONTRACTUAL (architecture defines it),
+ * DERIVED (deterministically derived from valid evidence), or NOT_OBSERVED (no sufficient evidence —
+ * NEVER `ASSUMED`). This is a read-only presentation classification, not a new authority.
+ */
+export type EdgeClassification = 'OBSERVED' | 'CONTRACTUAL' | 'DERIVED' | 'NOT_OBSERVED';
+
 export const ALLOWED_EDGE_SEMANTICS: EdgeSemantic[] = [
   'derived_from',
   'supports',
@@ -94,6 +102,26 @@ export interface GraphEdge {
   source: string;
   target: string;
   label: EdgeSemantic;
+  /** CONSTELACIÓN edge classification (see EdgeClassification). Present on real edges. */
+  classification?: EdgeClassification;
+}
+
+/** Deterministic, read-only classification of an edge by its semantic (authority-neutral). */
+export function edgeClassification(label: EdgeSemantic): EdgeClassification {
+  switch (label) {
+    case 'derived_from':
+    case 'executed_as':
+    case 'frozen_as':
+      return 'DERIVED';
+    case 'selected_by':
+    case 'authorized_by':
+      return 'OBSERVED';
+    case 'supports':
+    case 'produced_by':
+      return 'CONTRACTUAL';
+    default:
+      return 'NOT_OBSERVED';
+  }
 }
 
 export interface CognitiveProjectionGraph {
@@ -182,7 +210,7 @@ export function buildCognitiveProjectionGraph(p: CognitiveProjectionDTO): Cognit
     const target = resolveRef(to);
     if (!source || !target || source === target) return;
     if (!ALLOWED_EDGE_SEMANTICS.includes(label)) return;
-    edges.push({ id: `${source}|${label}|${target}`, source, target, label });
+    edges.push({ id: `${source}|${label}|${target}`, source, target, label, classification: edgeClassification(label) });
   };
 
   const resolveRef = (ref: string): string | null => byRef.get(ref) ?? null;

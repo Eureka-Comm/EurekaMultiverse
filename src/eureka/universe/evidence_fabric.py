@@ -1,7 +1,7 @@
 import os
 import uuid
 from typing import Dict, Any, List, Optional
-from datetime import datetime
+from datetime import datetime, timezone
 from src.eureka.universe.canonical_state import Evidence, ExtractedEvidence
 
 class ParserResult:
@@ -40,7 +40,7 @@ class TextParser(EvidenceParser):
                 extraction_method="TXT_DETERMINISTIC",
                 parser_id=self.parser_id,
                 parser_version=self.parser_version,
-                extraction_timestamp=datetime.utcnow().isoformat()
+                extraction_timestamp=datetime.now(timezone.utc).isoformat()
             )
             return ParserResult(extracted_evidence=extracted)
         except Exception as e:
@@ -68,7 +68,7 @@ class MarkdownParser(EvidenceParser):
                 extraction_method="MD_DETERMINISTIC",
                 parser_id=self.parser_id,
                 parser_version=self.parser_version,
-                extraction_timestamp=datetime.utcnow().isoformat()
+                extraction_timestamp=datetime.now(timezone.utc).isoformat()
             )
             return ParserResult(extracted_evidence=extracted)
         except Exception as e:
@@ -107,7 +107,7 @@ class DocxParser(EvidenceParser):
                 extraction_method="DOCX_DETERMINISTIC",
                 parser_id=self.parser_id,
                 parser_version=self.parser_version,
-                extraction_timestamp=datetime.utcnow().isoformat()
+                extraction_timestamp=datetime.now(timezone.utc).isoformat()
             )
             return ParserResult(extracted_evidence=extracted)
         except Exception as e:
@@ -152,7 +152,7 @@ class PdfParser(EvidenceParser):
                 extraction_method="PDF_DETERMINISTIC",
                 parser_id=self.parser_id,
                 parser_version=self.parser_version,
-                extraction_timestamp=datetime.utcnow().isoformat(),
+                extraction_timestamp=datetime.now(timezone.utc).isoformat(),
                 warnings=["Some pages were scanned and OCR is unavailable"] if has_scanned_pages else []
             )
             return ParserResult(extracted_evidence=extracted)
@@ -184,7 +184,7 @@ class CsvParser(EvidenceParser):
                 extraction_method="CSV_PANDAS",
                 parser_id=self.parser_id,
                 parser_version=self.parser_version,
-                extraction_timestamp=datetime.utcnow().isoformat()
+                extraction_timestamp=datetime.now(timezone.utc).isoformat()
             )
             return ParserResult(extracted_evidence=extracted)
         except Exception as e:
@@ -225,7 +225,7 @@ class XlsxParser(EvidenceParser):
                 extraction_method="XLSX_OPENPYXL",
                 parser_id=self.parser_id,
                 parser_version=self.parser_version,
-                extraction_timestamp=datetime.utcnow().isoformat()
+                extraction_timestamp=datetime.now(timezone.utc).isoformat()
             )
             return ParserResult(extracted_evidence=extracted)
         except Exception as e:
@@ -266,7 +266,7 @@ class PptxParser(EvidenceParser):
                 extraction_method="PPTX_PYTHONPPTX",
                 parser_id=self.parser_id,
                 parser_version=self.parser_version,
-                extraction_timestamp=datetime.utcnow().isoformat()
+                extraction_timestamp=datetime.now(timezone.utc).isoformat()
             )
             return ParserResult(extracted_evidence=extracted)
         except Exception as e:

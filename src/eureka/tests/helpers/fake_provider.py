@@ -10,7 +10,7 @@ from __future__ import annotations
 import uuid
 from typing import Any, Dict
 
-from ..universe.cognitive_provider import (
+from ...universe.cognitive_provider import (
     CognitiveProvider,
     ProviderResult,
     ProviderMetadata,
@@ -68,7 +68,7 @@ class FakeProvider(CognitiveProvider):
             proposal = {
                 "type": "typed_proposal",
                 "content": "deterministic proposal",
-                "metadata": metadata.dict(),
+                "metadata": metadata.model_dump(mode="json"),
             }
             self.last_proposal = proposal
             # Compute output hash now

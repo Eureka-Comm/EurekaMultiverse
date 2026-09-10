@@ -4,6 +4,7 @@ import { GlobalContextInspector } from "./GlobalContextInspector";
 import { TemporalRail } from "./TemporalRail";
 import { CommandPalette } from "../CommandPalette";
 import { ErrorBoundary } from "./ErrorBoundary";
+import { ThemeToggle } from "./ThemeToggle";
 
 export function EurekaShell() {
   return (
@@ -34,6 +35,8 @@ export function EurekaShell() {
             <span className="text-[10px] font-mono text-text-technical uppercase tracking-widest">Agent</span>
             <span className="text-xs font-medium text-signal-cognitive uppercase tracking-wide">DeepSeek</span>
           </div>
+          <div className="w-[1px] h-4 bg-[var(--eureka-spatial-hairline)]" />
+          <ThemeToggle />
         </div>
       </header>
 

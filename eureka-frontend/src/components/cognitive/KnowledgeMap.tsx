@@ -53,7 +53,7 @@ function artifactNode({ data, selected }: { data: GraphArtifact; selected: boole
       data-kind={data.kind}
       data-authority={data.authority}
       data-status={data.status}
-      className="min-w-[158px] max-w-[190px] bg-white overflow-hidden"
+      className="min-w-[158px] max-w-[190px] bg-[var(--eureka-surface-elevated)] overflow-hidden"
       style={{ border: `1px solid ${color}`, borderLeft: `3px solid ${color}`, boxShadow: selected ? `0 0 0 1.5px ${color}` : undefined, borderRadius: 3 }}
     >
       {data.kind !== 'PROBLEM' && <Handle type="target" position={Position.Left} style={{ background: color }} />}
@@ -82,10 +82,10 @@ const nodeTypes: NodeTypes = { artifact: artifactNode as any };
 function Toolbar({ onFit, onReset }: { onFit: () => void; onReset: () => void }) {
   return (
     <div className="absolute top-3 right-3 z-10 flex items-center gap-1.5">
-      <button onClick={onFit} className="px-2.5 py-1 text-[9px] font-mono uppercase tracking-wider rounded border border-[var(--eureka-spatial-hairline)] text-[var(--eureka-text-label)] bg-white hover:text-[var(--eureka-text-display)] hover:border-[var(--eureka-signal-cognitive)]">
+      <button onClick={onFit} className="px-2.5 py-1 text-[9px] font-mono uppercase tracking-wider rounded border border-[var(--eureka-spatial-hairline)] text-[var(--eureka-text-label)] bg-[var(--eureka-surface-active)] hover:text-[var(--eureka-text-display)] hover:border-[var(--eureka-signal-cognitive)]">
         fit
       </button>
-      <button onClick={onReset} className="px-2.5 py-1 text-[9px] font-mono uppercase tracking-wider rounded border border-[var(--eureka-spatial-hairline)] text-[var(--eureka-text-label)] bg-white hover:text-[var(--eureka-text-display)] hover:border-[var(--eureka-signal-cognitive)]">
+      <button onClick={onReset} className="px-2.5 py-1 text-[9px] font-mono uppercase tracking-wider rounded border border-[var(--eureka-spatial-hairline)] text-[var(--eureka-text-label)] bg-[var(--eureka-surface-active)] hover:text-[var(--eureka-text-display)] hover:border-[var(--eureka-signal-cognitive)]">
         reset
       </button>
     </div>

@@ -3,6 +3,7 @@ import { Button } from "../../components/ui/Button";
 import { Card, CardContent } from "../../components/ui/Card";
 import { FileUp, Database, Link, Terminal, Send } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import GalaxyConstellation from "../../components/cognitive/GalaxyConstellation";
 
 export default function Chat() {
   const [input, setInput] = useState("");
@@ -13,7 +14,13 @@ export default function Chat() {
   };
 
   return (
-    <div className="flex h-full flex-col items-center justify-center p-6">
+    <div className="flex h-full flex-col p-6">
+      {/* Cerebro / galaxia hero (estilo reel DaCFIiEMPEn) */}
+      <div className="mb-6 w-full overflow-hidden rounded-2xl border border-[var(--eureka-spatial-hairline)] shadow-[0_0_60px_-20px_rgba(155,107,255,0.5)]" style={{ height: 'min(34vh, 320px)' }}>
+        <GalaxyConstellation />
+      </div>
+
+      <div className="flex flex-1 flex-col items-center justify-center">
       <div className="mb-12 text-center">
         <h1 className="text-4xl font-semibold mb-3 tracking-tight">Good morning.</h1>
         <p className="text-lg text-text-muted">What decision are you working on?</p>
@@ -53,6 +60,7 @@ export default function Chat() {
         <Button variant="outline" onClick={() => navigate("/cases/new")} className="border-white/10">New Decision</Button>
         <Button variant="outline" onClick={() => navigate("/cases")} className="border-white/10">Open Case</Button>
         <Button variant="outline" onClick={() => navigate("/data")} className="border-white/10">Explore Data</Button>
+      </div>
       </div>
     </div>
   );

@@ -12,8 +12,9 @@ export default defineConfig({
   server: {
     proxy: {
       // Local dev: forward every /api call (work, evidence, copilot) to the backend.
+      // Use 127.0.0.1 explicitly so 'localhost -> ::1' (IPv6) can't redirect to a stray process.
       '/api': {
-        target: 'http://localhost:8000',
+        target: 'http://127.0.0.1:8000',
         changeOrigin: true,
       },
     },
