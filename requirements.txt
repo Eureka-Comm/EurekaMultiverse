@@ -12,6 +12,9 @@ uvicorn==0.30.1
 pydantic==2.13.4
 python-multipart==0.0.9   # FastaPI file/Form uploads (/api/evidence)
 
+# --- Security / Identity & Access ---
+argon2-cffi==23.1.0       # Argon2id password hashing (src/eureka/identity/security.py does `import argon2`)
+
 # --- LLM (DeepSeek / OpenAI-compatible) ---
 openai==2.21.0
 python-dotenv==1.0.1
