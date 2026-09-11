@@ -27,7 +27,6 @@ class InformationSufficiencyProposal(BaseModel):
 
 class MissingDataProposal(BaseModel):
     """LS94 — LLM CANDIDATE for what specific data is missing to answer a question.
-
     PROPOSAL ONLY. The LLM identifies WHAT is missing (a natural question + the specific
     data dimensions) so the system can ASK the user (HITL information gathering). It is
     NEVER authority: Python validates the proposal and decides whether to create a BLOCKING
@@ -37,12 +36,102 @@ class MissingDataProposal(BaseModel):
     question: str = ""                              # the natural, clear question to surface to the user
     required_information: List[str] = Field(default_factory=list)  # the specific data dimensions needed
     reason: str = ""                                # why (provenance / honesty)
+    # Governance/provenance of the PROBE itself (never LLM-authored): it distinguishes "the LLM
+    # answered that no data is needed" from "the LLM was unreachable/incoherent and Python failed
+    # closed to data_needed=False". The runtime records this in runtime_metadata + conditions, so a
+    # suppressed human gate is never silent.
+    evaluation_status: str = "OK"                   # OK | DEGRADED_LLM_UNAVAILABLE | DEGRADED_INCOHERENT
+    attempts: int = 1
+
+
+def build_knowledge_answer_fallback(*, intent: str, has_findings: bool, pending_required: List[str],
+                                    insufficient_missing: List[str]) -> str:
+    """Deterministic, Python-derived ANSWER text for a KNOWLEDGE_ANSWER publication.
+
+    Used ONLY when the LLM produced no ANSWER section. Every statement is DERIVED from the canonical
+    state passed in — the human/HITL state is never asserted as "pending" unless the caller says so
+    (that is why this function receives the pending/insufficient facts explicitly instead of
+    hardcoding them).
+    """
+    intent_txt = intent or "(sin intención registrada)"
+    if pending_required:
+        return (f"EUREKA no puede responder todavía a «{intent_txt}»: hay una solicitud de información humana "
+                f"pendiente. Sigue faltando: {'; '.join(pending_required)}. "
+                f"El trabajo permanece en WAITING_FOR_HUMAN_INPUT hasta recibirla.")
+    if insufficient_missing:
+        return (f"La información proporcionada por el humano no fue suficiente para responder «{intent_txt}». "
+                f"Sigue faltando: {'; '.join(insufficient_missing)}. "
+                f"No se emite una respuesta fundamentada sobre datos que no fueron aportados.")
+    if has_findings:
+        return (f"Los hallazgos disponibles sobre «{intent_txt}» no permiten una conclusión formal: no hay "
+                f"evidencia validada que fundamente una respuesta. Las predicciones no fueron evaluadas "
+                f"(NOT_EVALUATED) y no se ejecutó ninguna acción (NOT_EXECUTED).")
+    return (f"Basándome en la pregunta «{intent_txt}» y en los datos disponibles, no hay ningún hallazgo "
+            f"validado ni evidencia concreta que permita emitir una conclusión formal. Las predicciones no "
+            f"fueron evaluadas (NOT_EVALUATED) y no se ejecutó ninguna acción (NOT_EXECUTED).")
+
+
+def build_publication_context(canonical_state) -> Dict[str, Any]:
+    """Python-prepared EPISTEMIC context for the publication (pure, deterministic, LLM-free).
+
+    The LLM may WRITE the answer; it may not decide WHAT IS EVIDENCE. This builder hands it:
+    - findings WITH their status and resolvable evidence refs (so an UNSUPPORTED statement can never
+      be mistaken for validated knowledge),
+    - the GOVERNED human input (question, required dimensions, response, Python sufficiency verdict,
+      Evidence Authority id),
+    - the HITL state derived from the canonical state.
+    """
+    findings_objs = [f for f in (getattr(canonical_state.knowledge, "findings", None) or [])
+                     if getattr(f, "statement", None)]
+    findings = [f.statement for f in findings_objs][:15]
+    findings_txt = "\n".join(
+        f"- [{getattr(f, 'finding_id', '?')} | {getattr(f, 'status', '?')} | "
+        f"refs={','.join(getattr(f, 'evidence_refs', None) or []) or 'none'}] {getattr(f, 'statement', '')}"
+        for f in findings_objs
+    ) if findings else "- (ningun hallazgo validado)"
+
+    hrs = [hr for hr in (getattr(canonical_state, "human_requests", None) or [])
+           if getattr(hr, "type", "") == "INFORMATION"]
+    human_lines = []
+    for hr in hrs:
+        detail = getattr(hr, "sufficiency", None) or {}
+        resp = (getattr(hr, "response_data", None) or {}).get("value")
+        human_lines.append(
+            f"- request {getattr(hr, 'request_id', '?')} | status={getattr(hr, 'status', '?')} | "
+            f"python_sufficiency={getattr(hr, 'sufficiency_status', 'NOT_EVALUATED')} | "
+            f"evidence={getattr(hr, 'response_evidence_id', None) or 'none'} | "
+            f"resolution={getattr(hr, 'resolution', '?')} | attempt={getattr(hr, 'attempt', 0)}\n"
+            f"  asked: {(getattr(hr, 'question', '') or '')[:400]}\n"
+            f"  required_information: {'; '.join(getattr(hr, 'required_information', None) or []) or 'none'}\n"
+            f"  response: {str(resp)[:600] if resp is not None else '(no response received)'}\n"
+            f"  still_missing: {'; '.join((detail.get('missing') or [])) or 'none'}"
+        )
+    human_txt = "\n".join(human_lines) if human_lines else "- (no human information request was raised)"
+
+    pending_info = [hr for hr in hrs if getattr(hr, "status", "") == "PENDING"]
+    answered_info = [hr for hr in hrs if getattr(hr, "status", "") in ("ANSWERED", "COMPLETED")]
+    suff_counts: Dict[str, int] = {}
+    for hr in answered_info:
+        s = getattr(hr, "sufficiency_status", "NOT_EVALUATED") or "NOT_EVALUATED"
+        suff_counts[s] = suff_counts.get(s, 0) + 1
+    pending_decisions = [d for d in (getattr(canonical_state, "decision_points", None) or [])
+                         if getattr(d, "status", "") == "PENDING"]
+    has_human_dec = bool(getattr(getattr(canonical_state, "human_decision", None), "decision_id", None))
+    n_decided = sum(1 for d in (getattr(canonical_state, "decision_points", None) or [])
+                    if getattr(d, "status", "") == "ANSWERED")
+    hitl_txt = (
+        f"- human information requests: {len(hrs)} (ANSWERED={len(answered_info)}, PENDING={len(pending_info)}; "
+        f"python sufficiency: {', '.join(f'{k}={v}' for k, v in sorted(suff_counts.items())) or 'none'})\n"
+        f"- pending human decision points: {len(pending_decisions)}\n"
+        f"- human decision recorded: {'PRESENT' if has_human_dec else 'ABSENT'} ({n_decided} decision point(s) answered)"
+    )
+    return {"findings": findings, "findings_txt": findings_txt, "human_txt": human_txt, "hitl_txt": hitl_txt,
+            "pending_info": pending_info, "answered_info": answered_info}
 
 
 class DeltaProposal(BaseModel):
     items: List[Dict[str, Any]]
     confidence: float
-
 class MathRevalProposal(BaseModel):
     status: str
     validated_predictions: List[Dict[str, Any]]
@@ -1283,13 +1372,19 @@ class DeepSeekAdapter(CognitiveEngine):
                     proposal.required_information = [r for r in (proposal.required_information or []) if str(r).strip()]
                     if not proposal.required_information or not (proposal.question or "").strip():
                         proposal.data_needed = False  # degrade: Python will not ask on incoherent content
+                        proposal.evaluation_status = "DEGRADED_INCOHERENT"
+                proposal.attempts = attempt
                 return proposal
             except Exception as e:
                 attempt += 1
                 last_error = str(e)
                 logger.warning(f"Failed to generate missing-data proposal (attempt {attempt}/{max_retries}): {last_error}")
         logger.warning("propose_missing_data: returning data_needed=False after retries exhausted (LLM unavailable).")
-        return MissingDataProposal(data_needed=False)
+        # Fail CLOSED on fabricating a request — but the DEGRADATION is declared (never silent): the
+        # runtime records it in runtime_metadata + a StateCondition so the answer/report can say the
+        # sufficiency probe was unavailable instead of pretending the question was self-answerable.
+        return MissingDataProposal(data_needed=False, evaluation_status="DEGRADED_LLM_UNAVAILABLE",
+                                   attempts=attempt, reason=last_error[:300])
 
     def propose_predictions(self, problem: ProblemModel, task: CognitiveTask, knowledge: 'KnowledgeStateModel') -> PredictorProposal:
         # F-5: the previous stub returned candidate_predictions=[] unconditionally, leaving the Predictor inert.
@@ -1651,8 +1746,15 @@ Evaluate applicability."""
         # ---- Gather REAL canonical data ----
         objective = (canonical_state.problem.objective if canonical_state.problem and getattr(canonical_state.problem, 'objective', None) else None) or (canonical_state.work.user_intent if canonical_state.work else '')
         intent = canonical_state.work.user_intent if canonical_state.work else ''
-        findings = [f.statement for f in canonical_state.knowledge.findings if getattr(f, 'statement', None)][:15]
-        findings_txt = "\n".join(f"- {x}" for x in findings) if findings else "- (ningun hallazgo validado)"
+        # Python prepares the epistemic context (findings WITH status/refs, governed human input,
+        # derived HITL state) so the LLM can never mistake a proposal for evidence.
+        _ctx = build_publication_context(canonical_state)
+        findings = _ctx["findings"]
+        findings_txt = _ctx["findings_txt"]
+        human_txt = _ctx["human_txt"]
+        hitl_txt = _ctx["hitl_txt"]
+        _pending_info = _ctx["pending_info"]
+        _answered_info = _ctx["answered_info"]
         presc = canonical_state.prescriptive_knowledge.prescriptions[-1] if canonical_state.prescriptive_knowledge.prescriptions else None
         presc_txt = ""
         if presc:
@@ -1686,16 +1788,25 @@ Evaluate applicability."""
               If there is NO validated finding / evidence, say so explicitly instead of inventing content.
             - NEVER invent numerical predictions, uncertainty ranges, metrics, causality, human decisions, or execution
               results. Where the pipeline did not evaluate something, state e.g. "las predicciones no fueron evaluadas
-              (NOT_EVALUATED)", "la decisión humana está pendiente (PENDING)", "no se ejecutó acción (NOT_EXECUTED)".
+              (NOT_EVALUATED)", "no se ejecutó acción (NOT_EXECUTED)".
+            - HUMAN INPUT RULE: an entry with python_sufficiency=SUFFICIENT and an evidence= id is AUTHORITATIVE
+              evidence (provided by the human, validated by Python): ground the answer on it and cite it. If
+              python_sufficiency is INSUFFICIENT/PARTIAL/INVALID, you MUST state explicitly that the human-provided
+              information was insufficient and list EXACTLY the items under still_missing; you MUST NOT invent that
+              content and MUST NOT present the request as resolved.
+            - HITL STATE RULE: report the human/HITL state EXACTLY as given in 'HITL STATE (Python-derived)'. Never
+              say that a human decision or human information is pending unless that state says it is pending.
             - Include an 'ANSWER' section. Add a 'FINDINGS' section ONLY if real findings exist. Add a 'LIMITATIONS' /
               'WHAT REMAINS OPEN' section ONLY if the evaluation is genuinely open/incomplete.
             SCHEMA for 'sections' elements:
             {schema_str}
             """
-            user_content = (f"QUESTION: {intent}\nOBJECTIVE: {objective}\n\nREAL FINDINGS:\n{findings_txt}\n"
+            user_content = (f"QUESTION: {intent}\nOBJECTIVE: {objective}\n\nREAL FINDINGS (status + evidence refs):\n{findings_txt}\n"
+                            f"\nGOVERNED HUMAN INPUT (Python-validated; authoritative):\n{human_txt}\n"
+                            f"\nHITL STATE (Python-derived):\n{hitl_txt}\n"
                             f"\nREAL ALTERNATIVES (if any):\n{presc_txt if presc else 'none'}\n"
                             f"\nEVALUATION STATUS (Python, authoritative):\n- predictions: {pred_status} ({n_preds} prediction(s))\n"
-                            f"- prescriptions: {n_presc}\n- human decision: {'PRESENT' if has_human_dec else 'PENDING'} ({n_decided} answered)\n"
+                            f"- prescriptions: {n_presc}\n"
                             f"- action plan: {('present' if ap else 'NOT_EXECUTED')}\n{ex_txt}")
         else:
             system_prompt = f"""
@@ -1729,11 +1840,14 @@ Evaluate applicability."""
             if op_mode == "KNOWLEDGE_ANSWER":
                 # Guarantee an ANSWER section (the primary, LLM-semantic deliverable).
                 if not any(sec.section_type == "ANSWER" for sec in sections):
-                    answer_txt = next((s.content for s in sections if s.section_type in ("SUMMARY",)), "") or (
-                        f"Basándome en la pregunta «{intent}» y en los datos disponibles de EUREKA, no hay un hallazgo "
-                        f"validado ni una evidencia concreta que permita emitir una conclusión formal. "
-                        f"Las predicciones no fueron evaluadas (NOT_EVALUATED), la decisión humana está pendiente (PENDING) "
-                        f"y no se ejecutó ninguna acción (NOT_EXECUTED).")
+                    _missing_items = sorted({m for hr in _answered_info
+                                             for m in ((getattr(hr, "sufficiency", None) or {}).get("missing") or [])})
+                    _pending_items = sorted({m for hr in _pending_info
+                                             for m in (getattr(hr, "required_information", None) or [])})
+                    answer_txt = next((s.content for s in sections if s.section_type in ("SUMMARY",)), "") or \
+                        build_knowledge_answer_fallback(intent=intent, has_findings=bool(findings),
+                                                        pending_required=_pending_items,
+                                                        insufficient_missing=_missing_items)
                     sections.insert(0, PublicationSection(
                         section_id=f"SEC-{_dt.datetime.now(_dt.timezone.utc).strftime('%H%M%S')}-A",
                         section_type="ANSWER",

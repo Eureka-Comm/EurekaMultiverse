@@ -21,7 +21,13 @@ class FrozenResult(BaseModel):
     result_id: str
     status: str = "FROZEN" # Only FROZEN or SUPERSEDED
     knowledge_version: str
+    # VALIDATED knowledge only (status == "VALIDATED"). The name is the contract: UNSUPPORTED /
+    # REJECTED findings must NEVER appear here.
     validated_knowledge: List[Dict[str, Any]] = Field(default_factory=list)
+    # Full knowledge snapshot (ALL findings, whatever their status) kept ONLY as the content payload
+    # of the freeze signature, so a frozen snapshot stays tamper-evident AND `validated_knowledge`
+    # stays truthful. Legacy frozen results (no snapshot) keep the historical signature shape.
+    knowledge_snapshot: List[Dict[str, Any]] = Field(default_factory=list)
     validated_predictions: List[Dict[str, Any]] = Field(default_factory=list)
     validated_prescriptions: List[Dict[str, Any]] = Field(default_factory=list)
     validated_action_plan: Optional[Dict[str, Any]] = None

@@ -135,11 +135,16 @@ class ToolCallRequest(BaseModel):
     parameters: Dict[str, Any]
 
 def _repopulate_evidence(canonical):
-    """Reflect the idempotent evidence snapshot from the global store (no pipeline mutation)."""
+    """Reflect the idempotent evidence snapshot from the global store (no pipeline mutation).
+
+    Records that live in the global `evidence_store` mirror are (re)built from it. Records that
+    exist ONLY in the canonical state (e.g. a human-input Evidence created by the governed HITL
+    contract, or the runtime-created EVI-CONTEXT unit) are PRESERVED — the canonical state is the
+    source of truth and a read projection must never silently drop canonical evidence.
+    """
     from src.eureka.universe.canonical_state import Evidence, ExtractedEvidence
+    prev_evidence = {e.evidence_id: e for e in (canonical.evidence or [])}
     canonical.evidence = []
-    # Preserve the runtime-created EVI-CONTEXT unit (descriptor.py) even though it is NOT in the
-    # evidence_store: it is the governing context source that findings cite as EVI-CONTEXT.
     prev_extracted = dict(canonical.extracted_evidence)
     canonical.extracted_evidence = {}
     for eid in canonical.evidence_ids:
@@ -149,6 +154,11 @@ def _repopulate_evidence(canonical):
             canonical.evidence.append(ev)
             if "extracted_evidence" in e_data:
                 canonical.extracted_evidence[eid] = ExtractedEvidence(**e_data["extracted_evidence"])
+        elif eid in prev_evidence:
+            # already-canonical record (not mirrored in the in-memory upload store): keep it as-is
+            canonical.evidence.append(prev_evidence[eid])
+            if eid in prev_extracted:
+                canonical.extracted_evidence[eid] = prev_extracted[eid]
     if "EVI-CONTEXT" in prev_extracted:
         canonical.extracted_evidence["EVI-CONTEXT"] = prev_extracted["EVI-CONTEXT"]
     return canonical
@@ -433,13 +443,24 @@ class HumanInputRequest(BaseModel):
     value: Any
     rationale: str = ""
 
+
+def _utc_iso() -> str:
+    """UTC ISO-8601 timestamp (module-level helper: several handler branches need it and some of
+    them import `datetime` locally, which would otherwise shadow the name for the whole function)."""
+    import datetime as _dtm
+    return _dtm.datetime.now(_dtm.timezone.utc).isoformat()
+
 @app.post("/api/work/{work_id}/human_input")
 async def provide_human_input(work_id: str, req: HumanInputRequest, background_tasks: BackgroundTasks):
     canonical = works_db.get(work_id)
     if not canonical:
         raise HTTPException(status_code=404, detail="Work not found")
         
-    from .canonical_state import HumanKnowledgeContribution, StructuredFinding
+    from .canonical_state import (HumanKnowledgeContribution, StructuredFinding, Evidence,
+                                  ExtractedEvidence, HumanInteractionRequest, StateCondition)
+    from .human_input_sufficiency import (SUFFICIENT, MAX_HUMAN_INFORMATION_ATTEMPTS, METHOD,
+                                          evaluate_human_response, normalize_human_value,
+                                          count_information_attempts, build_followup_question)
     import uuid
     
     contribution = HumanKnowledgeContribution(
@@ -451,33 +472,138 @@ async def provide_human_input(work_id: str, req: HumanInputRequest, background_t
     canonical.human_contributions.append(contribution)
     
     if req.type == "INFORMATION":
-        # Resolve the missing information request
-        if canonical.human_requests:
-            for hr in canonical.human_requests:
-                if hr.request_id == req.request_id or not req.request_id:
-                    hr.status = "ANSWERED"
-                    hr.response_data = {"value": req.value}
-        
-        # We need to add the information to the knowledge base so the LLM sees it
-        if isinstance(req.value, dict):
-            content = ", ".join(f"{k}: {v}" for k, v in req.value.items())
+        # ============================ HITL -> EVIDENCE AUTHORITY -> FINDINGS ============================
+        # Governance: HUMAN_RESPONSE_RECEIVED != HUMAN_RESPONSE_SUFFICIENT != HUMAN_RESPONSE_VALIDATED.
+        # The human is the authority over the information they provide, but Python decides (never the
+        # LLM) whether that content is SUFFICIENT for the request it answers. The response is ALWAYS
+        # persisted and ALWAYS represented in the EXISTING Evidence Authority; it becomes GROUNDING
+        # evidence + a VALIDATED finding ONLY when the verdict is SUFFICIENT.
+        target = None
+        for hr in (canonical.human_requests or []):
+            if hr.request_id == req.request_id or not req.request_id:
+                target = hr
+                break
+        if target is not None:
+            target.status = "ANSWERED"                       # RECEIVED (not "resolved")
+            target.response_data = {"value": req.value}
+
+        text = normalize_human_value(req.value)
+        assessment = evaluate_human_response(
+            response_value=req.value,
+            required_information=(getattr(target, "required_information", None) if target is not None else None),
+            question=(getattr(target, "question", "") if target is not None else ""),
+            user_intent=(canonical.work.user_intent if canonical.work else ""),
+            objective=(canonical.problem.objective if canonical.problem
+                       and getattr(canonical.problem, "objective", None) else ""),
+        )
+        verdict = assessment["status"]
+        sufficient = verdict == SUFFICIENT
+        request_ref = getattr(target, "request_id", None) if target is not None else None
+
+        # (1) Evidence Authority: ONE real, resolvable Evidence record for this response (reuses the
+        #     existing model + the existing evidence_store mirror — no second store, no parallel model).
+        ev_id = f"EVI-HUMAN-{uuid.uuid4().hex[:8].upper()}"
+        evidence = Evidence(
+            evidence_id=ev_id,
+            filename=f"human_input_{request_ref or 'unbound'}.txt",
+            media_type="text/plain",
+            extension=".txt",
+            size=len(text.encode("utf-8")),
+            source="HUMAN",
+            ingestion_status="INGESTED",
+            extraction_status="EXTRACTED" if sufficient else "NOT_EXTRACTED",
+            parser_id="HumanInputParser" if sufficient else None,
+            parser_version="1.0" if sufficient else None,
+            content_reference=f"human_requests[{request_ref}].response_data.value",
+            created_at=_utc_iso(),
+            provenance=[f"HumanRequest[{request_ref}]",
+                        f"HumanContribution[{contribution.contribution_id}]",
+                        f"Work[{work_id}]",
+                        f"Sufficiency[{METHOD} verdict={verdict} authority=PYTHON]"],
+            extraction_reason_code=None if sufficient else f"HUMAN_INPUT_{verdict}",
+        )
+        canonical.evidence_ids.append(evidence.evidence_id)
+        canonical.evidence.append(evidence)
+        evidence_store[evidence.evidence_id] = evidence.model_dump(mode="json")
+        if target is not None:
+            target.sufficiency_status = verdict
+            target.sufficiency = assessment
+            target.response_evidence_id = evidence.evidence_id
+            target.attempt = target.attempt or max(1, count_information_attempts(canonical.human_requests))
+            target.resolution = ("RESOLVED_SUFFICIENT" if sufficient
+                                 else ("REJECTED_INVALID" if verdict == "INVALID" else "AWAITING_MORE"))
+
+        if sufficient:
+            # (2) Grounding unit (the Descriptor/Publisher grounding source) + (3) VALIDATED finding.
+            unit = ExtractedEvidence(
+                extracted_evidence_id=evidence.evidence_id,
+                evidence_id=evidence.evidence_id,
+                content_type="text/plain",
+                text_blocks=[text],
+                extraction_method="HUMAN_INPUT",
+                parser_id="HumanInputParser",
+                parser_version="1.0",
+                extraction_timestamp=_utc_iso(),
+            )
+            canonical.extracted_evidence[evidence.evidence_id] = unit
+            evidence_store[evidence.evidence_id]["extracted_evidence"] = unit.model_dump(mode="json")
+            canonical.knowledge.findings.append(StructuredFinding(
+                finding_id="FIND-" + str(uuid.uuid4())[:6],
+                statement=f"Human-provided information ({request_ref}): {text}",
+                finding_type="DESCRIPTIVE",
+                evidence_refs=[evidence.evidence_id],          # RESOLVABLE evidence id (never a dangling label)
+                method="HUMAN_INPUT_SUFFICIENCY_GATE",
+                status="VALIDATED",
+                provenance=[f"HumanRequest[{request_ref}]",
+                            f"HumanContribution[{contribution.contribution_id}]",
+                            f"Evidence[{evidence.evidence_id}] -> HUMAN (resolvable)",
+                            f"Gate[{METHOD} verdict={verdict} authority=PYTHON]",
+                            f"Work[{work_id}]"],
+            ))
+            canonical.knowledge.version += 1
+            for step in canonical.execution_plan.steps:       # close the gate: resume the paused step
+                if step.status == "WAITING_FOR_HUMAN_INPUT":
+                    step.status = "READY"
+                    step.waiting_reason = ""
+            canonical.conditions.append(StateCondition(
+                status="INFORMATIONAL", reason_code="HUMAN_INPUT_SUFFICIENT",
+                message=(f"Respuesta humana evaluada por Python como SUFICIENTE ({METHOD}); promovida a "
+                         f"evidencia {evidence.evidence_id} y a finding VALIDATED con procedencia completa.")))
         else:
-            content = str(req.value)
-            
-        canonical.knowledge.findings.append(StructuredFinding(
-            finding_id="FIND-" + str(uuid.uuid4())[:6],
-            statement=f"Human provided missing information: {content}",
-            finding_type="QUANTITATIVE",
-            status="VALIDATED",
-            evidence_refs=["HUMAN_INPUT"]
-        ))
-        
-        # Unblock predictor
-        for step in canonical.execution_plan.steps:
-            if step.status == "WAITING_FOR_HUMAN_INPUT":
-                step.status = "READY"
-                step.waiting_reason = ""
-                
+            # INSUFFICIENT / PARTIAL / INVALID: preserve the response + its provenance, DO NOT validate,
+            # DO NOT unblock, and re-ask for the EXACT missing items (bounded by the anti-loop budget).
+            canonical.conditions.append(StateCondition(
+                status="WAITING_FOR_HUMAN_INPUT", reason_code=f"HUMAN_INPUT_{verdict}",
+                message=(f"Respuesta humana insuficiente ({METHOD}, authority=PYTHON): "
+                         f"{'; '.join(assessment['reasons'])}. Sigue faltando: "
+                         f"{'; '.join(assessment['missing']) or 'no especificado'}.")))
+            attempts = count_information_attempts(canonical.human_requests)
+            if attempts < MAX_HUMAN_INFORMATION_ATTEMPTS:
+                still_missing = list(assessment["missing"]
+                                     or (getattr(target, "required_information", None) or []))
+                canonical.human_requests.append(HumanInteractionRequest(
+                    type="INFORMATION",
+                    question=build_followup_question(original_question=(getattr(target, "question", "")
+                                                                        if target is not None else ""),
+                                                     missing=still_missing, attempt=attempts + 1),
+                    reason=(f"Contrato HITL: la respuesta recibida no cubrió la información requerida "
+                            f"(veredicto Python={verdict}). Se vuelve a solicitar de forma explícita; "
+                            f"un texto no vacío no se acepta como evidencia por sí solo."),
+                    required_information=still_missing,
+                    decision_required=False,
+                    blocking=True,
+                    attempt=attempts + 1,
+                    follows_request_id=request_ref,
+                ))
+            else:
+                if target is not None:
+                    target.resolution = "EXHAUSTED"
+                canonical.conditions.append(StateCondition(
+                    status="WAITING_FOR_HUMAN_INPUT", reason_code="HUMAN_INPUT_EXHAUSTED",
+                    message=(f"Se agotaron los {MAX_HUMAN_INFORMATION_ATTEMPTS} intentos de solicitud de "
+                             f"información: el trabajo permanece bloqueado y NO se publica una respuesta "
+                             f"no fundamentada.")))
+
     elif req.type == "SELECTION":
         from .canonical_state import HumanDecision
         import uuid
@@ -553,10 +679,28 @@ async def provide_human_input(work_id: str, req: HumanInputRequest, background_t
             # Store non-dict as a single parameter named 'value'
             canonical.human_decision.parameters_modified["value"] = req.value
         
-    # Resume the workflow
-    canonical.status = "READY"
-    background_tasks.add_task(run_work_background, work_id)
-    return {"status": "RESUMED", "contribution_id": contribution.contribution_id}
+    # Resume the workflow ONLY when the human gate is actually CLOSED: a SELECTION / PARAMETER
+    # contribution, or an INFORMATION response that Python judged SUFFICIENT. An insufficient
+    # response keeps the work BLOCKED on WAITING_FOR_HUMAN_INPUT — a published answer must never be
+    # produced over information the human did not actually provide.
+    gate_still_open = (req.type == "INFORMATION"
+                       and any(s.status == "WAITING_FOR_HUMAN_INPUT" for s in canonical.execution_plan.steps))
+    if gate_still_open:
+        canonical.status = "WAITING_FOR_HUMAN_INPUT"
+        canonical.active_em = "EM Publisher"
+    else:
+        canonical.status = "READY"
+        background_tasks.add_task(run_work_background, work_id)
+    # Durability: persist the canonical state for BOTH outcomes (the blocked path has no background
+    # run that would otherwise persist it), so the response, its Evidence record and any follow-up
+    # request survive a restart.
+    works_db[work_id] = canonical
+    return {"status": ("WAITING_FOR_HUMAN_INPUT" if gate_still_open else "RESUMED"),
+            "contribution_id": contribution.contribution_id,
+            "human_response_sufficiency": (getattr(target, "sufficiency_status", None)
+                                           if req.type == "INFORMATION" else None),
+            "response_evidence_id": (getattr(target, "response_evidence_id", None)
+                                     if req.type == "INFORMATION" else None)}
 
 @app.get("/api/health")
 def get_health():

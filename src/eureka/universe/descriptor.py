@@ -1,11 +1,52 @@
 import logging
-from typing import List, Dict, Any, Optional
+import unicodedata
+from typing import List, Dict, Any, Optional, Iterable
 import uuid
 
 from .canonical_state import CanonicalWorkState, ExtractedEvidence, StructuredFinding, ExecutionStep
 from .cognitive_engine import CognitiveEngine, DescriptorProposal, record_runtime_call
 
 logger = logging.getLogger(__name__)
+
+# ---------------------------------------------------------------------------------------------
+# Shared, reusable deterministic CONTENT gate (single implementation).
+# The lexical grounding gate below and the governed human-response sufficiency evaluator
+# (`human_input_sufficiency.py`) MUST use the same notion of "substantive token" so the system
+# has ONE deterministic content criterion instead of two divergent ones.
+# ---------------------------------------------------------------------------------------------
+_STOPWORDS = set("""a an and are as at be but by for from has have if in into is it its of on or that the
+this to was were will with would about can could not only so than then too very what when where which who
+why la el los las un una y o de del al que en es son para por con sin no se su sus""".split())
+
+
+def fold_text(text: str) -> str:
+    """Fold diacritics so 'qué'/'que' and 'más'/'mas' compare equal (deterministic, no deps)."""
+    return "".join(c for c in unicodedata.normalize("NFKD", text) if not unicodedata.combining(c))
+
+
+def substantive_tokens(text: Any) -> set:
+    """Deterministic substantive-token set: accent-folded, lowercased, stopwords and <=2 chars out."""
+    if text is None:
+        return set()
+    folded = fold_text(str(text)).lower()
+    raw = [w.strip(".,;:!?()[]{}\"'-") for w in folded.split()]
+    return {w for w in raw if w and w not in _STOPWORDS and len(w) > 2}
+
+
+def lexical_overlap(statement: str, sources: Iterable[str]) -> bool:
+    """Deterministic lexical grounding gate (conservative). True when the statement shares at
+    least one substantive token with a source. Rejects clear hallucinations (zero overlap) while
+    tolerating legitimate paraphrase. Single implementation shared with the sufficiency evaluator."""
+    if not statement:
+        return False
+    stmt_tokens = {w for w in statement.lower().split() if w not in _STOPWORDS and len(w) > 2}
+    if not stmt_tokens:
+        return False
+    for src in sources:
+        src_tokens = set((src or "").lower().split())
+        if stmt_tokens & src_tokens:
+            return True
+    return False
 
 class EMDescriptor:
     """
@@ -16,24 +57,13 @@ class EMDescriptor:
     statements are downgraded to UNSUPPORTED (not promoted as truth).
     Authority="Findings / evidencia", LLM=🟢 (subordinado), Determinismo=🟡 (Python valida).
     """
-    _STOP = set("""a an and are as at be but by for from has have if in into is it its of on or that the
-    this to was were will with would about can could not only so than then too very what when where which who
-    why la el los las un una y o de del al que en es son para por con sin no se su sus""".split())
+    _STOP = _STOPWORDS   # kept for backwards compatibility (single source: module-level _STOPWORDS)
 
     def _grounded(self, statement: str, sources: List[str]) -> bool:
-        """Deterministic lexical grounding gate (conservative). Returns True when the
-        LLM statement shares at least one substantive token with a source. This rejects
-        clear hallucinations (zero overlap) while tolerating legitimate paraphrase."""
-        if not statement:
-            return False
-        stmt_tokens = {w for w in statement.lower().split() if w not in self._STOP and len(w) > 2}
-        if not stmt_tokens:
-            return False
-        for src in sources:
-            src_tokens = set((src or "").lower().split())
-            if stmt_tokens & src_tokens:
-                return True
-        return False
+        """Deterministic lexical grounding gate (conservative). Delegates to the SINGLE shared
+        implementation (`lexical_overlap`) so the Descriptor gate and the governed human-response
+        sufficiency evaluator can never diverge."""
+        return lexical_overlap(statement, sources)
 
     def __init__(self, cognitive_engine: CognitiveEngine):
         self.cognitive_engine = cognitive_engine

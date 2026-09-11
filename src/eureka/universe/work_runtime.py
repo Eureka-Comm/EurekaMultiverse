@@ -6,10 +6,13 @@ from .story_engine import StoryEngine
 from .artifact_engine import ArtifactEngine
 from .descriptor import EMDescriptor
 from .predictor import EMPredictor
-from .cognitive_engine import TestDoubleCognitiveEngine
+from .cognitive_engine import TestDoubleCognitiveEngine, record_runtime_call
+from .human_input_sufficiency import MAX_HUMAN_INFORMATION_ATTEMPTS, count_information_attempts
 from .effect_policy import EffectBoundary, DryRunContext, ExecutionMode, PolicyError, default_boundary
 import datetime
 import logging
+import time as _time
+import uuid as _uuid
 
 logger = logging.getLogger(__name__)
 
@@ -404,18 +407,40 @@ class WorkRuntime:
         #    still-open (undecided) DECISION question can lack the data to answer substantively.
         if op_mode not in ("KNOWLEDGE_ANSWER", "DECISION"):
             return False
-        # 3. Ask ONCE. If the user has already supplied information (via the human_input endpoint),
-        #    the data is now a VALIDATED HUMAN_INPUT finding / an INFORMATION human-contribution —
-        #    the pipeline should resume and ANSWER, never loop on a second request.
-        _provided = any(
-            getattr(f, "status", "") == "VALIDATED" and "HUMAN_INPUT" in (getattr(f, "evidence_refs", None) or [])
-            for f in (list(getattr(canonical.knowledge, "findings", None) or []))
-        ) or any(
-            getattr(c, "type", "") == "INFORMATION"
-            for c in (getattr(canonical, "human_contributions", None) or [])
-        )
-        if _provided:
+        # 3. Do NOT ask again when the human has already provided SUFFICIENT information. The verdict
+        #    belongs to Python (human_input_sufficiency), never to the LLM — and an INSUFFICIENT /
+        #    PARTIAL response does NOT close the gate (the request is repeated with the missing items).
+        _info_reqs = [hr for hr in (getattr(canonical, "human_requests", None) or [])
+                      if getattr(hr, "type", "") == "INFORMATION"]
+        _answered_reqs = [hr for hr in _info_reqs
+                          if getattr(hr, "status", "") in ("ANSWERED", "COMPLETED")]
+        _evaluated = [hr for hr in _answered_reqs
+                      if (getattr(hr, "sufficiency_status", "NOT_EVALUATED") or "NOT_EVALUATED") != "NOT_EVALUATED"]
+        if any((getattr(hr, "sufficiency_status", "") or "") == "SUFFICIENT" for hr in _answered_reqs):
             return False
+        #    Legacy compatibility (works persisted BEFORE the sufficiency contract existed): a
+        #    VALIDATED finding carrying the historical "HUMAN_INPUT" label still counts as provided.
+        if not _evaluated and (
+            any(
+                getattr(f, "status", "") == "VALIDATED" and "HUMAN_INPUT" in (getattr(f, "evidence_refs", None) or [])
+                for f in (list(getattr(canonical.knowledge, "findings", None) or []))
+            ) or any(
+                getattr(c, "type", "") == "INFORMATION"
+                for c in (getattr(canonical, "human_contributions", None) or [])
+            )
+        ):
+            return False
+        # 3b. Anti-loop (bounded): when the governed request budget is spent we neither loop forever
+        #     nor publish over missing information — the work stays BLOCKED with an explicit condition.
+        if count_information_attempts(getattr(canonical, "human_requests", None)) >= MAX_HUMAN_INFORMATION_ATTEMPTS:
+            if not any(c.reason_code == "HUMAN_INPUT_EXHAUSTED" for c in canonical.conditions):
+                canonical.conditions.append(StateCondition(
+                    status="WAITING_FOR_HUMAN_INPUT",
+                    reason_code="HUMAN_INPUT_EXHAUSTED",
+                    message=(f"Se agotaron los {MAX_HUMAN_INFORMATION_ATTEMPTS} intentos de solicitud de información y la "
+                             f"respuesta recibida no fue suficiente: el trabajo permanece bloqueado y NO se publica una "
+                             f"respuesta no fundamentada.")))
+            return True
         # 4. Python-authority sufficiency guard: if the Descriptor grounded findings in REAL uploaded
         #    evidence (evidence_refs beyond the synthetic EVI-CONTEXT / HUMAN_INPUT), the question IS
         #    answerable from real data -> NEVER ask (preserves LS92 answers grounded in attached data).
@@ -430,13 +455,43 @@ class WorkRuntime:
         #    from questions that genuinely need the user's specific data (True). Python never lets the
         #    LLM decide authority — it only sources the content; Python decides blocking + persists.
         proposal = None
+        _engine = self._cognitive_engine_for(canonical)
+        _probe_t0 = _time.time()
+        _probe_call_id = f"CALL-{_uuid.uuid4().hex[:8]}"
+        _probe_model = getattr(_engine, "model", None) or type(_engine).__name__
+        _probe_ctx = canonical.work.work_id if canonical.work else ""
+
+        def _record_probe(status: str) -> None:
+            # PROVENANCE: the probe REALLY happened (it is not retrospective), so it is recorded —
+            # and a degraded probe is recorded as degraded, never as a clean "no data needed".
+            record_runtime_call(canonical, em="EM Descriptor", capability_id="propose_missing_data",
+                                call_id=_probe_call_id, model=_probe_model,
+                                output_schema="MissingDataProposal",
+                                latency_ms=(_time.time() - _probe_t0) * 1000,
+                                context_id=_probe_ctx, status=status)
+
         try:
-            proposal = self._cognitive_engine_for(canonical).propose_missing_data(
+            proposal = _engine.propose_missing_data(
                 prob, [getattr(f, "statement", "") for f in (list(getattr(canonical.knowledge, "findings", None) or []))]
             )
-        except Exception as e:  # fail CLOSED: unreachable/degraded LLM must not fabricate a request
+        except Exception as e:  # fail CLOSED: an unreachable/degraded LLM must not fabricate a request
+            _record_probe("FAILED")
             logger.warning("LS94 propose_missing_data unavailable (%s); not asking (normal publish).", e)
+            if not any(c.reason_code == "MISSING_DATA_PROBE_FAILED" for c in canonical.conditions):
+                canonical.conditions.append(StateCondition(
+                    status="INFORMATIONAL", reason_code="MISSING_DATA_PROBE_FAILED",
+                    message=("La sonda de suficiencia (LLM) no estuvo disponible: no se creó una solicitud de "
+                             "información. El hecho queda registrado (no silencioso).")))
             return False
+        _probe_status = (getattr(proposal, "evaluation_status", "OK") or "OK")
+        _record_probe("COMPLETED" if _probe_status == "OK" else _probe_status)
+        if _probe_status != "OK":
+            if not any(c.reason_code == "MISSING_DATA_PROBE_DEGRADED" for c in canonical.conditions):
+                canonical.conditions.append(StateCondition(
+                    status="INFORMATIONAL", reason_code="MISSING_DATA_PROBE_DEGRADED",
+                    message=(f"Sonda de suficiencia degradada ({_probe_status}, attempts="
+                             f"{getattr(proposal, 'attempts', 1)}): no se creó solicitud de información; "
+                             f"la respuesta se publica declarando esta limitación.")))
         if proposal is None or not getattr(proposal, "data_needed", False):
             return False
         required = [r for r in (getattr(proposal, "required_information", None) or []) if str(r).strip()]
@@ -957,7 +1012,17 @@ class WorkRuntime:
             for f in findings[:6]:
                 lines.append(f"  · {f}")
             lines.append(f"Predicciones matemáticas: {n_preds} ({(n_preds and 'NOT_EVALUATED') or 'no evaluadas'})")
-            lines.append(f"Decisión humana: {'presente' if n_decided else 'PENDIENTE'}")
+            # §9 consistency: the human/HITL state is DERIVED from the canonical state (never a
+            # hardcoded "PENDIENTE" that can contradict the real request status).
+            _hr_info = [r for r in (getattr(canonical, "human_requests", None) or [])
+                        if getattr(r, "type", "") == "INFORMATION"]
+            _hr_pending = [r for r in _hr_info if getattr(r, "status", "") == "PENDING"]
+            _hr_answered = [r for r in _hr_info if getattr(r, "status", "") in ("ANSWERED", "COMPLETED")]
+            _hr_suff = sorted({(getattr(r, "sufficiency_status", "NOT_EVALUATED") or "NOT_EVALUATED") for r in _hr_answered})
+            lines.append(f"Solicitudes de información humana: {len(_hr_info)} (RESPONDIDAS={len(_hr_answered)}, "
+                         f"PENDIENTES={len(_hr_pending)}"
+                         + (f"; suficiencia: {', '.join(_hr_suff)}" if _hr_suff else "") + ")")
+            lines.append(f"Decisión humana: {'registrada' if n_decided else 'no registrada'}")
             lines.append(f"Ejecución / plan de acción: {'presente' if has_plan else 'NO EJECUTADO'}")
             canonical.result.status = "AVAILABLE"
             canonical.result.summary = "\n".join(lines)

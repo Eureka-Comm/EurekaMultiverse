@@ -69,6 +69,16 @@ class HumanInteractionRequest(BaseModel):
     created_at: str = Field(default_factory=lambda: datetime.datetime.now().isoformat())
     status: str = "PENDING"
     response_data: Optional[Dict[str, Any]] = None
+    # --- Human-response governance (HITL -> Evidence Authority contract) -----------------------
+    # RECEIVED != SUFFICIENT != VALIDATED. `status` only records that a response was RECEIVED;
+    # the CONTENT verdict is `sufficiency_status`, decided by Python (never by the LLM), and
+    # `response_evidence_id` is the REAL Evidence id created from the response (if any).
+    sufficiency_status: str = "NOT_EVALUATED"  # NOT_EVALUATED | INSUFFICIENT | PARTIAL | SUFFICIENT | INVALID
+    sufficiency: Dict[str, Any] = Field(default_factory=dict)  # covered/missing/reasons/method/evaluated_at
+    response_evidence_id: Optional[str] = None  # Evidence Authority id for THIS response (real, resolvable)
+    resolution: str = "PENDING"  # PENDING | RESOLVED_SUFFICIENT | AWAITING_MORE | REJECTED_INVALID | EXHAUSTED
+    attempt: int = 0  # 0 = original question; n = n-th governed follow-up (anti-loop)
+    follows_request_id: Optional[str] = None  # previous request this follow-up refines
 
 class HumanDecisionPoint(BaseModel):
     decision_id: str = Field(default_factory=lambda: "DEC-" + str(uuid.uuid4())[:6])
@@ -129,7 +139,9 @@ class Evidence(BaseModel):
     sha256: str = ""
     source: str
     ingestion_status: str # UPLOADING, INGESTED, REJECTED, FAILED
-    extraction_status: str = "NOT_STARTED" # NOT_STARTED, PARSING, EXTRACTED, PARTIAL, GAP, FAILED
+    extraction_status: str = "NOT_STARTED" # NOT_STARTED, PARSING, EXTRACTED, PARTIAL, GAP, FAILED, NOT_EXTRACTED
+    # NOT_EXTRACTED = received + traceable but deliberately NOT promoted to grounding evidence
+    # (e.g. a human response whose Python-governed sufficiency verdict was not SUFFICIENT).
     parser_id: Optional[str] = None
     parser_version: Optional[str] = None
     content_reference: Optional[str] = None

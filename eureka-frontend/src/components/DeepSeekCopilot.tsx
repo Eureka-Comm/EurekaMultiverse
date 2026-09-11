@@ -114,10 +114,24 @@ export default function DeepSeekCopilot({
           body: JSON.stringify({ type: 'INFORMATION', request_id: infoReq.request_id || infoReq.id, value: msgText }),
         });
         if (answer.ok) {
-          currentHistory.push({ sender: 'EUREKA', text: '✓ Gracias — he recibido tu información y continúo el análisis.' });
+          // Governed HITL contract: RECEIVED != SUFFICIENT. The backend returns the Python verdict on
+          // the CONTENT of the answer; never claim the analysis continues if the data was insufficient.
+          let payload: any = null;
+          try { payload = await answer.json(); } catch { /* no body -> fall back to neutral text */ }
+          const verdict = String(payload?.human_response_sufficiency || '').toUpperCase();
+          if (verdict === 'SUFFICIENT') {
+            currentHistory.push({ sender: 'EUREKA', text: '✓ Gracias — he recibido tu información y continúo el análisis.' });
+          } else if (verdict) {
+            currentHistory.push({ sender: 'EUREKA', text: `La información recibida no es suficiente (${verdict}). EUREKA te pedirá de nuevo, de forma concreta, los datos que siguen faltando; nada se publicará hasta recibirlos.` });
+          } else {
+            currentHistory.push({ sender: 'EUREKA', text: '✓ Respuesta registrada. EUREKA continúa el análisis.' });
+          }
           commitCurrentHistory();
           setIsWaiting(false);
-          return; // don't route to the copilot; the pipeline resumes with the data
+          // Refresh immediately so the UI shows the real outcome: the work resumed, or a governed
+          // follow-up INFORMATION request is now pending.
+          void useWorkStore.getState().pollState?.();
+          return; // don't route to the copilot; the pipeline either resumes with the data or re-asks
         }
       }
     } catch (_e) { /* if the info-submit fails, fall through to the copilot */ }

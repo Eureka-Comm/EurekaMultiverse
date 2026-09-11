@@ -23,6 +23,9 @@ export default function HITLDecisionWidget() {
   if (activeRequest) {
     return (
       <InformationItem
+        // key by request id: a governed FOLLOW-UP request (an insufficient answer creates a new
+        // request) must remount the form instead of inheriting the previous "SUBMITTED" state.
+        key={activeRequest.request_id || activeRequest.id}
         request={activeRequest}
         workId={activeWork.work.workId}
       />

@@ -24,9 +24,9 @@ def _route_of(server_text: str, target_line: int) -> str:
 def test_server_writes_are_inside_http_route_handlers():
     src = SERVER.read_text(encoding="utf-8")
     # The two server fs writes (evidence upload + work download). Line numbers are the CURRENT
-    # positions after the Identity & Access integration added preamble lines; the writes are still
+    # positions after the governed HITL -> Evidence contract added lines; the writes are still
     # inside HTTP handlers (the property under test is unchanged).
-    for lineno in (401, 866):
+    for lineno in (411, 1003):
         route = _route_of(src, lineno)
         assert route.startswith("@app."), f"server.py:{lineno} not inside an HTTP route: {route}"
 

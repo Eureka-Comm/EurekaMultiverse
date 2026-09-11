@@ -245,11 +245,17 @@ class EMInstaller:
         signature = hashlib.sha256(data_to_hash.encode('utf-8')).hexdigest()
 
         from .publication_model import FrozenResult
+        # Truthful freeze contract: `validated_knowledge` carries ONLY VALIDATED findings; the full
+        # findings snapshot is preserved separately for auditability (never as "validated").
+        _all_findings = [f.model_dump() for f in canonical_state.knowledge.findings]
+        _validated_findings = [f.model_dump() for f in canonical_state.knowledge.findings
+                               if getattr(f, "status", "") == "VALIDATED"]
         frozen = FrozenResult(
             result_id=f"FROZEN-{uuid.uuid4().hex[:6]}",
             status="FROZEN",
             knowledge_version="v1",
-            validated_knowledge=[f.model_dump() for f in canonical_state.knowledge.findings],
+            validated_knowledge=_validated_findings,
+            knowledge_snapshot=_all_findings,
             validated_predictions=[p.model_dump() for p in canonical_state.predictive_knowledge.predictions],
             validated_prescriptions=[p.model_dump() for p in canonical_state.prescriptive_knowledge.prescriptions],
             validated_action_plan=canonical_state.action_plan.model_dump() if canonical_state.action_plan else None,

@@ -2,15 +2,31 @@ import uuid
 import hashlib
 import json
 import os
-from typing import Optional, Dict, Any
+import re
+import time
+from typing import Optional, Dict, Any, List
 
 from .problem_model import ProblemModel, CognitiveTask
 from .canonical_state import CanonicalWorkState
-from .cognitive_engine import CognitiveEngine
+from .cognitive_engine import CognitiveEngine, record_runtime_call
+from .descriptor import fold_text
 from .publication_model import PublicationInput, PublicationState, FrozenResult, PublishedResult, PublicationSection
 from .canonical_identity import canonical_state_fingerprint
 from .effect_policy import (EffectBoundary, DryRunContext, ExecutionMode, PolicyError,
                             default_boundary, guarded_dump_json)
+
+# Deterministic detector for a FALSE "human input/decision still pending" claim in a proposed
+# section. Publication Authority MUST reflect the current Canonical State (§9): claiming a pending
+# human gate when the canonical state has none is a fabricated state, not a stylistic issue.
+_PENDING_HUMAN_CLAIM_RE = re.compile(
+    r"(decision(es)?\s+human\w*[^.]{0,60}pendient\w*"
+    r"|pendient\w*[^.]{0,60}decision\s+human\w*"
+    r"|informaci[oó]n\s+human\w*[^.]{0,60}pendient\w*"
+    r"|human\s+(decision|input|information)[^.]{0,40}(pend\w*|await\w*|outstanding)"
+    r"|await\w*\s+human\s+(decision|input|information)"
+    r"|no\s+human\s+(decision|input)\s+(has\s+been\s+)?(provided|received|recorded))",
+    re.IGNORECASE,
+)
 
 class EMPublisher:
     def __init__(self, cognitive_engine: CognitiveEngine,
@@ -72,8 +88,9 @@ class EMPublisher:
                 pass
         
         # R8.12 Completeness check
-        # Get sections from LLM
-        sections = self.cognitive_engine.propose_publication(problem, task, canonical_state)
+        # Get sections from LLM (PROVENANCE: a cognitive call that really happened is recorded;
+        # a call that did not happen is never recorded — no retrospective provenance).
+        sections = self._propose_publication_recorded(problem, task, canonical_state)
         if not sections:
             # LS52 resilience: when the LLM produces no sections, build a truthful fallback
             # summary from the available canonical data so every completed work yields an
@@ -85,6 +102,11 @@ class EMPublisher:
                 content=self._fallback_summary(problem, canonical_state),
                 status="VALIDATED"
             )]
+
+        # §9 Publication consistency: the Publication Authority is derived from the CURRENT Canonical
+        # State. A proposed section that claims a pending human gate while the canonical state has
+        # none is a FABRICATED STATE (not a wording preference) and is corrected in Python.
+        sections = self._enforce_hitl_state_consistency(sections, canonical_state)
             
         # Gate R8.6, R8.7: Contradiction / Unknowns Preservation
         # Gate R8.4: Provenance Completeness
@@ -146,11 +168,18 @@ class EMPublisher:
         # reused when the underlying canonical state is unchanged (immutability).
         sig = self._freeze_signature(canonical_state)
         if not canonical_state.frozen_result or canonical_state.frozen_result.freeze_signature != sig:
+            # The freeze must be TRUTHFUL: `validated_knowledge` carries ONLY findings whose status
+            # is VALIDATED. The full findings snapshot is preserved separately (knowledge_snapshot)
+            # because the freeze signature is computed over it (tamper-evidence unchanged).
+            all_findings = [f.model_dump(mode="json") for f in canonical_state.knowledge.findings]
+            validated_findings = [f.model_dump(mode="json") for f in canonical_state.knowledge.findings
+                                  if getattr(f, "status", "") == "VALIDATED"]
             canonical_state.frozen_result = FrozenResult(
                 result_id=f"FROZEN-{uuid.uuid4().hex[:6]}",
                 status="FROZEN",
                 knowledge_version="v1",
-                validated_knowledge=[f.model_dump(mode="json") for f in canonical_state.knowledge.findings],
+                validated_knowledge=validated_findings,
+                knowledge_snapshot=all_findings,
                 validated_predictions=[p.model_dump(mode="json") for p in (canonical_state.predictive_knowledge.predictions or [])],
                 validated_prescriptions=[p.model_dump(mode="json") for p in (canonical_state.prescriptive_knowledge.prescriptions or [])],
                 validated_action_plan=canonical_state.action_plan.model_dump(mode="json") if canonical_state.action_plan else None,
@@ -288,6 +317,112 @@ class EMPublisher:
 
         return canonical_state
 
+    def _propose_publication_recorded(self, problem, task, canonical_state: CanonicalWorkState):
+        """Call the cognitive engine for the publication SECTIONS and record the real cognitive call
+        in `runtime_metadata`. If the call fails, it is recorded as FAILED and the error propagates
+        (fail closed) — a failed cognitive call is never recorded as if it had succeeded."""
+        import uuid as _uuid
+        _t0 = time.time()
+        engine = self.cognitive_engine
+        model = getattr(engine, "model", None) or type(engine).__name__
+        context_id = canonical_state.work.work_id if canonical_state.work else ""
+        capability_id = getattr(task, "capability_id", "") or "propose_publication"
+        try:
+            sections = engine.propose_publication(problem, task, canonical_state)
+        except Exception:
+            record_runtime_call(canonical_state, em="EM Publisher", capability_id=capability_id,
+                                call_id=f"CALL-{_uuid.uuid4().hex[:8]}", model=model,
+                                output_schema="PublicationSection", latency_ms=(time.time() - _t0) * 1000,
+                                context_id=context_id, status="FAILED")
+            raise
+        record_runtime_call(canonical_state, em="EM Publisher", capability_id=capability_id,
+                            call_id=f"CALL-{_uuid.uuid4().hex[:8]}", model=model,
+                            output_schema="PublicationSection", latency_ms=(time.time() - _t0) * 1000,
+                            context_id=context_id, status="COMPLETED")
+        return sections
+
+    # --------------------------------------------------------------------------------------- #
+    # §9 Publication consistency — HITL / human-information state is DERIVED from canonical state
+    # --------------------------------------------------------------------------------------- #
+    def _hitl_state_text(self, canonical_state: CanonicalWorkState) -> str:
+        """Deterministic, Python-derived description of the CURRENT human-authority state.
+
+        Derived — never hardcoded — so the publication can never contradict the canonical state
+        (e.g. publishing 'human decision PENDING' when every human request is ANSWERED).
+        """
+        reqs = list(getattr(canonical_state, "human_requests", None) or [])
+        pending_info = [r for r in reqs if getattr(r, "status", "") == "PENDING"
+                        and getattr(r, "type", "") == "INFORMATION"]
+        answered = [r for r in reqs if getattr(r, "status", "") in ("ANSWERED", "COMPLETED")]
+        sufficiency = {}
+        for r in answered:
+            s = getattr(r, "sufficiency_status", "NOT_EVALUATED") or "NOT_EVALUATED"
+            sufficiency[s] = sufficiency.get(s, 0) + 1
+        pending_decisions = [d for d in (getattr(canonical_state, "decision_points", None) or [])
+                             if getattr(d, "status", "") == "PENDING"]
+        has_decision = bool(getattr(getattr(canonical_state, "human_decision", None), "decision_id", None))
+        suff_txt = ", ".join(f"{k}={v}" for k, v in sorted(sufficiency.items())) or "none"
+        return (
+            "Estado HITL (derivado del Canonical State): "
+            f"solicitudes de informacion humana={len(reqs)} "
+            f"(ANSWERED={len(answered)}, PENDING={len(pending_info)}; suficiencia: {suff_txt}); "
+            f"puntos de decision humana pendientes={len(pending_decisions)}; "
+            f"decision humana registrada={'si' if has_decision else 'no'}."
+        )
+
+    def _strip_pending_claims(self, content: str) -> str:
+        """Remove ONLY the sentences that fabricate a pending human gate (deterministic split)."""
+        parts = re.split(r"(?<=[.!?;])\s+", content or "")
+        kept = [p for p in parts if not _PENDING_HUMAN_CLAIM_RE.search(fold_text(p))]
+        return " ".join(p.strip() for p in kept if p.strip()).strip()
+
+    def _enforce_hitl_state_consistency(self, sections: List[PublicationSection],
+                                        canonical_state: CanonicalWorkState) -> List[PublicationSection]:
+        """Guarantee the publication's human-authority state matches the canonical state.
+
+        1. Any section asserting a PENDING human decision/information while the canonical state has
+           NO pending human request and NO pending decision point is REPLACED by the Python-derived
+           state text (its provenance records the correction).
+        2. A LIMITATIONS section carrying the Python-derived state text is always present, so the
+           human-authority state is published explicitly and traceably.
+        """
+        state_text = self._hitl_state_text(canonical_state)
+        has_pending = bool(
+            [r for r in (getattr(canonical_state, "human_requests", None) or [])
+             if getattr(r, "status", "") == "PENDING"]
+            or [d for d in (getattr(canonical_state, "decision_points", None) or [])
+                if getattr(d, "status", "") == "PENDING"]
+        )
+        sections = list(sections or [])
+        for sec in sections:
+            content = getattr(sec, "content", "") or ""
+            if has_pending or not _PENDING_HUMAN_CLAIM_RE.search(fold_text(content)):
+                continue
+            stripped = self._strip_pending_claims(content)
+            if stripped and len(stripped) >= 20:
+                # Keep the rest of the section; remove ONLY the fabricated state claim.
+                sec.content = stripped
+                sec.provenance = list(getattr(sec, "provenance", None) or []) + [
+                    "PYTHON_HITL_STATE_CORRECTION: removed a claim of a pending human gate that the "
+                    "canonical state does not have"]
+            else:
+                # Nothing truthful left in that section: replace it with the Python-derived state and
+                # retype it (the claim it made was a state statement, so LIMITATIONS is its true type).
+                sec.content = state_text
+                sec.section_type = "LIMITATIONS"
+                sec.provenance = list(getattr(sec, "provenance", None) or []) + [
+                    "PYTHON_HITL_STATE_CORRECTION: section replaced by the canonical HITL state"]
+        if not any(getattr(s, "section_type", "") == "LIMITATIONS" and state_text in (getattr(s, "content", "") or "")
+                   for s in sections):
+            sections.append(PublicationSection(
+                section_id=f"SEC-{uuid.uuid4().hex[:6]}-HITL",
+                section_type="LIMITATIONS",
+                content=state_text,
+                status="VALIDATED",
+                provenance=["PYTHON_HITL_STATE: derived from Canonical State (never hardcoded)"],
+            ))
+        return sections
+
     def _freeze_signature(self, canonical_state: CanonicalWorkState) -> str:
         """Deterministic hash of the canonical content a publication depends on.
 
@@ -296,7 +431,13 @@ class EMPublisher:
         -> a different signature, so a NEW frozen snapshot is produced.
         """
         payload = {
-            "findings": [f.model_dump(mode="json") for f in canonical_state.knowledge.findings],
+            # The signature binds the FULL findings snapshot (content identity) AND the VALIDATED
+            # subset (so tampering `validated_knowledge` alone is detected as tamper).
+            "findings": {
+                "snapshot": [f.model_dump(mode="json") for f in canonical_state.knowledge.findings],
+                "validated": [f.model_dump(mode="json") for f in canonical_state.knowledge.findings
+                              if getattr(f, "status", "") == "VALIDATED"],
+            },
             "contradictions": list(canonical_state.knowledge.contradictions),
             "unknowns": list(canonical_state.knowledge.unknowns),
             "predictions": [p.model_dump(mode="json") for p in (canonical_state.predictive_knowledge.predictions or [])],
@@ -312,9 +453,19 @@ class EMPublisher:
     @staticmethod
     def _signature_from_frozen(frozen: FrozenResult) -> str:
         """Recompute the freeze (canonical-content) signature from a FrozenResult snapshot, so the
-        integrity of a stored/published frozen snapshot can be verified independently (tamper-evident)."""
+        integrity of a stored/published frozen snapshot can be verified independently (tamper-evident).
+
+        The signature is bound to BOTH the full knowledge snapshot and the VALIDATED subset it
+        certifies. Frozen results persisted BEFORE the snapshot field existed keep the historical
+        payload shape (list of `validated_knowledge`), so old artifacts still verify unchanged.
+        """
+        if getattr(frozen, "knowledge_snapshot", None):
+            findings_value: Any = {"snapshot": list(frozen.knowledge_snapshot),
+                                   "validated": list(frozen.validated_knowledge)}
+        else:
+            findings_value = list(frozen.validated_knowledge)
         payload = {
-            "findings": list(frozen.validated_knowledge),
+            "findings": findings_value,
             "contradictions": list(frozen.contradictions),
             "unknowns": list(frozen.unknowns),
             "predictions": list(frozen.validated_predictions),
@@ -405,6 +556,7 @@ class EMPublisher:
         parts.append(f"Decisiones humanas: {answered}")
         if canonical_state.action_plan:
             parts.append(f"Plan de acción validado: {canonical_state.action_plan.plan_id}")
+        parts.append(self._hitl_state_text(canonical_state))
         if not obj and not presc:
             parts.append("El análisis de EUREKA completó su ejecución; la respuesta formal se deriva del estado canónico disponible.")
         return "\n".join(parts)
