@@ -1,5 +1,5 @@
 from typing import Dict, Any, Optional, List
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, model_validator
 from .work_model import EurekaWork
 from .problem_model import ProblemModel
 from .agent_definition import AgentDefinition
@@ -79,6 +79,10 @@ class HumanInteractionRequest(BaseModel):
     resolution: str = "PENDING"  # PENDING | RESOLVED_SUFFICIENT | AWAITING_MORE | REJECTED_INVALID | EXHAUSTED
     attempt: int = 0  # 0 = original question; n = n-th governed follow-up (anti-loop)
     follows_request_id: Optional[str] = None  # previous request this follow-up refines
+    # CANONICAL ASSOCIATION HumanRequest -> Work. Stamped by Python (`CanonicalWorkState` binds every
+    # request to its own work on construction/validation), so a request can never be answered through
+    # a DIFFERENT work: the API validates `request.work_id == work_id` and fails closed otherwise.
+    work_id: str = ""
 
 class HumanDecisionPoint(BaseModel):
     decision_id: str = Field(default_factory=lambda: "DEC-" + str(uuid.uuid4())[:6])
@@ -560,6 +564,20 @@ class CanonicalWorkState(BaseModel):
             if rec.source_id == entity_id:
                 return rec
         return None
+
+    @model_validator(mode="after")
+    def _bind_human_requests_to_this_work(self):
+        """CANONICAL ASSOCIATION (single authority): every HumanInteractionRequest belongs to the Work
+        whose canonical state contains it. Stamped here, in ONE place, so the association exists in
+        the canonical model itself (durable and self-healing for works persisted before this field
+        existed) instead of being re-derived — and possibly diverging — per UI surface.
+        """
+        work_id = getattr(getattr(self, "work", None), "work_id", "") or ""
+        if work_id:
+            for hr in (getattr(self, "human_requests", None) or []):
+                if not getattr(hr, "work_id", ""):
+                    hr.work_id = work_id
+        return self
 
 
 # ===========================================================================

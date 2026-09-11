@@ -450,6 +450,17 @@ def _utc_iso() -> str:
     import datetime as _dtm
     return _dtm.datetime.now(_dtm.timezone.utc).isoformat()
 
+
+def _same_submission(previous, incoming) -> bool:
+    """Deterministic content comparison of two human submissions (dict/list/str), for idempotency."""
+    def _norm(v):
+        if isinstance(v, dict):
+            return {str(k): _norm(x) for k, x in v.items()}
+        if isinstance(v, (list, tuple)):
+            return [_norm(x) for x in v]
+        return ("" if v is None else str(v)).strip()
+    return _norm(previous) == _norm(incoming)
+
 @app.post("/api/work/{work_id}/human_input")
 async def provide_human_input(work_id: str, req: HumanInputRequest, background_tasks: BackgroundTasks):
     canonical = works_db.get(work_id)
@@ -463,6 +474,50 @@ async def provide_human_input(work_id: str, req: HumanInputRequest, background_t
                                           count_information_attempts, build_followup_question)
     import uuid
     
+    # ===================== PRE-VALIDATION (FAIL CLOSED, before mutating ANYTHING) =====================
+    # A human answer is the answer to a SPECIFIC HumanInteractionRequest of a SPECIFIC Work. Python
+    # validates that association BEFORE creating any contribution / evidence / finding, so a
+    # submission can never land on another work (work identity drift) nor be applied twice
+    # (double submit). Nothing below this block may mutate state for a rejected submission.
+    target = None
+    if req.type == "INFORMATION":
+        request_id = (req.request_id or "").strip()
+        if not request_id:
+            raise HTTPException(status_code=409, detail={
+                "reason_code": "REQUEST_ID_REQUIRED",
+                "message": "INFORMATION submissions must name the HumanInteractionRequest they answer."})
+        target = next((hr for hr in (canonical.human_requests or []) if hr.request_id == request_id), None)
+        if target is None:
+            raise HTTPException(status_code=409, detail={
+                "reason_code": "REQUEST_NOT_IN_WORK",
+                "message": (f"Request {request_id} does not belong to work {work_id}: refusing to apply a "
+                            f"human answer to a work that did not ask for it.")})
+        if getattr(target, "work_id", "") and target.work_id != work_id:
+            raise HTTPException(status_code=409, detail={
+                "reason_code": "REQUEST_WORK_MISMATCH",
+                "message": f"Request {request_id} belongs to work {target.work_id}, not {work_id}."})
+        if not getattr(target, "work_id", ""):
+            target.work_id = work_id          # self-heal for works persisted before this field existed
+        if target.status in ("ANSWERED", "COMPLETED"):
+            previous_value = (target.response_data or {}).get("value")
+            if _same_submission(previous_value, req.value):
+                # IDEMPOTENT REPLAY: same request + same content -> same verdict, NO duplication.
+                works_db[work_id] = canonical
+                return {"status": "IDEMPOTENT_REPLAY", "contribution_id": None,
+                        "human_response_sufficiency": target.sufficiency_status,
+                        "response_evidence_id": target.response_evidence_id}
+            superseding = [h for h in (canonical.human_requests or [])
+                           if h.type == "INFORMATION" and h.status == "PENDING"
+                           and h.request_id != target.request_id]
+            if superseding:
+                raise HTTPException(status_code=409, detail={
+                    "reason_code": "REQUEST_SUPERSEDED",
+                    "message": (f"Request {request_id} was already answered; the open request is "
+                                f"{superseding[-1].request_id}.")})
+            raise HTTPException(status_code=409, detail={
+                "reason_code": "REQUEST_ALREADY_ANSWERED",
+                "message": f"Request {request_id} was already answered with different content."})
+
     contribution = HumanKnowledgeContribution(
         type=req.type,
         value=req.value,
@@ -478,14 +533,9 @@ async def provide_human_input(work_id: str, req: HumanInputRequest, background_t
         # LLM) whether that content is SUFFICIENT for the request it answers. The response is ALWAYS
         # persisted and ALWAYS represented in the EXISTING Evidence Authority; it becomes GROUNDING
         # evidence + a VALIDATED finding ONLY when the verdict is SUFFICIENT.
-        target = None
-        for hr in (canonical.human_requests or []):
-            if hr.request_id == req.request_id or not req.request_id:
-                target = hr
-                break
-        if target is not None:
-            target.status = "ANSWERED"                       # RECEIVED (not "resolved")
-            target.response_data = {"value": req.value}
+        # (The request was already resolved and validated against this work in the pre-validation.)
+        target.status = "ANSWERED"                       # RECEIVED (not "resolved")
+        target.response_data = {"value": req.value}
 
         text = normalize_human_value(req.value)
         assessment = evaluate_human_response(
@@ -594,6 +644,7 @@ async def provide_human_input(work_id: str, req: HumanInputRequest, background_t
                     blocking=True,
                     attempt=attempts + 1,
                     follows_request_id=request_ref,
+                    work_id=work_id,          # CANONICAL ASSOCIATION (stamped at creation)
                 ))
             else:
                 if target is not None:

@@ -137,12 +137,15 @@ def hitl_env(monkeypatch, tmp_path):
     monkeypatch.setattr(server, "evidence_store", {})
     monkeypatch.setattr(server, "runtime", runtime)
     return SimpleNamespace(client=TestClient(server.app), store=store, runtime=runtime,
-                           work_id="WORK-HITL-1", pubdir=runtime.publisher.publication_dir)
+                           work_id="WORK-HITL-1", pubdir=runtime.publisher.publication_dir,
+                           request_id=store["WORK-HITL-1"].human_requests[0].request_id)
 
 
 def _answer(env, value, request_id=None):
+    # A human answer MUST name the HumanInteractionRequest it answers (the API fails closed without it).
     return env.client.post(f"/api/work/{env.work_id}/human_input",
-                           json={"type": "INFORMATION", "request_id": request_id, "value": value,
+                           json={"type": "INFORMATION",
+                                 "request_id": request_id or env.request_id, "value": value,
                                  "rationale": "respuesta humana desde la UI"})
 
 
@@ -575,7 +578,7 @@ def test_20_sufficient_human_input_reaches_publication_and_freeze(hitl_env):
 def test_21_client_cannot_claim_sufficiency_or_evidence_id(hitl_env):
     """A forged client payload can never inject sufficiency/evidence/validation fields."""
     r = hitl_env.client.post(f"/api/work/{hitl_env.work_id}/human_input", json={
-        "type": "INFORMATION", "value": ECHO_RESPONSE,
+        "type": "INFORMATION", "request_id": hitl_env.request_id, "value": ECHO_RESPONSE,
         "sufficiency_status": SUFFICIENT, "response_evidence_id": "EVI-HUMAN-FORGED",
         "status": "ANSWERED", "resolution": "RESOLVED_SUFFICIENT"})
     assert r.status_code == 200

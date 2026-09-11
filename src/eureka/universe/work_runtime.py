@@ -502,6 +502,8 @@ class WorkRuntime:
         canonical.human_requests.append(HumanInteractionRequest(
             type="INFORMATION",
             question=question,
+            # CANONICAL ASSOCIATION: the request knows the Work it belongs to (stamped at creation).
+            work_id=(canonical.work.work_id if canonical.work else ""),
             reason=(getattr(proposal, "reason", None) or (
                 "LS94: el Descriptor no pudo fundamentar hallazgos (evidencia insuficiente); se solicita "
                 "la información específica para realizar un análisis fundamentado. Solicitado por Python, "

@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useWorkStore } from '../store/workStore';
 import { selectActiveDecision, selectActiveInformationRequest } from '../selectors/decisionSelectors';
 import { API_BASE } from '../lib/apiBase';
+import { beginHumanSubmit, endHumanSubmit, requestBelongsToWork } from '../lib/humanSubmit';
 
 export default function HITLDecisionWidget() {
   const activeWork = useWorkStore((state) => state.activeWork);
@@ -133,6 +134,19 @@ function InformationItem({ request, workId }: { request: any, workId: string }) 
 
   const handleSubmit = async () => {
     if (!value.trim()) return;
+    // (a) ASSOCIATION: the request must belong to the work this form posts to. If the projection and
+    // the request disagree, POST NOTHING (fail closed) instead of answering another work's request.
+    if (!requestBelongsToWork(request.work_id, workId)) {
+      setErrorMsg(`Error de identidad: la solicitud ${request.request_id} pertenece al trabajo ${request.work_id}, no a ${workId}. No se envía nada.`);
+      setStatus('ERROR');
+      return;
+    }
+    // (b) SINGLE-FLIGHT: one submission per (work, request), shared with the chat surface.
+    const requestId = String(request.request_id || request.id || '');
+    if (!beginHumanSubmit(workId, requestId)) {
+      setErrorMsg('Ya hay un envío en curso para esta solicitud; no se duplica.');
+      return;
+    }
     setStatus('SUBMITTING');
     setErrorMsg('');
     try {
@@ -142,14 +156,24 @@ function InformationItem({ request, workId }: { request: any, workId: string }) 
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           type: 'INFORMATION',
-          request_id: request.request_id,
+          request_id: requestId,
           value,
           rationale: 'Human provided information from UI'
         })
       });
       if (!res.ok) {
-        const detail = await res.text().catch(() => '');
-        throw new Error(`HTTP ${res.status}: ${String(detail).slice(0, 120) || 'error'}`);
+        const detail = await res.json().catch(() => null);
+        const code = detail?.detail?.reason_code;
+        const message = detail?.detail?.message;
+        if (code) {
+          // The server validates work<->request and idempotency: surface its verdict verbatim.
+          setErrorMsg(`${code}: ${message || ''}`.trim());
+          setStatus('ERROR');
+          pollState();
+          return;
+        }
+        const raw = await res.text().catch(() => '');
+        throw new Error(`HTTP ${res.status}: ${String(raw).slice(0, 120) || 'error'}`);
       }
       setStatus('SUBMITTED');
       pollState();
@@ -161,6 +185,8 @@ function InformationItem({ request, workId }: { request: any, workId: string }) 
         setErrorMsg('No se pudo conectar con el backend (:8000). Revisa que esté activo y reintenta.');
       }
       setStatus('ERROR');
+    } finally {
+      endHumanSubmit(workId, requestId);
     }
   };
 

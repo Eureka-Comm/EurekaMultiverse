@@ -6,6 +6,16 @@ import { API_BASE } from '../lib/apiBase';
 
 export type AppState = 'BOOTING' | 'READY' | 'NO_WORK' | 'CONTRACT_ERROR' | 'RUNTIME_ERROR';
 
+/**
+ * SINGLE resolver for the canonical Work id of a projection. Every API call that addresses a work
+ * must use THIS function (tolerant of camelCase/snake_case projections) instead of re-deriving
+ * `work.workId || work.work_id || work_id` at each call site — divergent resolution is exactly what
+ * produced "GET work X / POST work Y" in production.
+ */
+export function activeWorkWorkId(work: any): string | null {
+  return work?.work?.workId || work?.work?.work_id || work?.work_id || null;
+}
+
 interface WorkState {
   appState: AppState;
   activeWork: CanonicalWorkState | null;
@@ -180,19 +190,29 @@ export const useWorkStore = create<WorkState>((set, get) => ({
   },
   
   pollState: async () => {
-    const activeWork = get().activeWork;
-    if (!activeWork) return;
+    const requested = get().activeWork;
+    if (!activeWorkWorkId(requested)) return;
+    const requestedWorkId = activeWorkWorkId(requested)!;
     
     // LS46: always refresh while a work is active, so HITL states
     // (WAITING_FOR_HUMAN_INPUT) remain observable after a resume.
     
     try {
       const apiUrl = API_BASE;
-      const response = await fetch(`${apiUrl}/api/work/${activeWork.work.workId}/state`);
+      const response = await fetch(`${apiUrl}/api/work/${requestedWorkId}/state`);
       const data = await response.json();
       
       if (response.ok) {
         const validatedState = CanonicalWorkStateSchema.parse(data);
+        // CORRELATION (work identity): a poll response is applied ONLY when the RESPONSE refers to
+        // the work that was requested, the active work is still that same work, and it does not move
+        // the projection backwards. Without the response check, a late answer for a previous work
+        // would overwrite the current one, making the displayed HITL request belong to a DIFFERENT
+        // work than the store's "current" work (the production drift).
+        if (activeWorkWorkId(validatedState) !== requestedWorkId) return;
+        const current = get().activeWork;
+        if (!current || activeWorkWorkId(current) !== requestedWorkId) return;
+        if ((validatedState.revision ?? 0) < (current.revision ?? 0)) return;
         set({ activeWork: validatedState });
       }
     } catch (e) {

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useWorkStore } from '../store/workStore';
+import { useWorkStore, activeWorkWorkId } from '../store/workStore';
 import HITLDecisionWidget from './HITLDecisionWidget';
 import Markdown from './Markdown';
 import { buildNarrativeStages, findActiveHITLStage } from '../domain/narrative';
@@ -7,6 +7,9 @@ import { buildCopilotNarrativeContext } from '../domain/cognitiveStory';
 import { useCognitiveProjection } from '../hooks/useCognitiveProjection';
 import { ExecutiveCognitiveAnswer, type CognitiveFocus } from './cognitive/ExecutiveCognitiveAnswer';
 import { API_BASE } from '../lib/apiBase';
+import {
+  beginHumanSubmit, endHumanSubmit, requestBelongsToWork, shouldRouteToHumanGate,
+} from '../lib/humanSubmit';
 
 // LS95 (auth): the LLM copilot is reached ONLY through the EUREKA backend, never via a
 // browser-facing proxy that would expose DEEPSEEK_API_KEY. The backend holds the key and is
@@ -54,7 +57,7 @@ export default function DeepSeekCopilot({
   const isFirstRenderRef = React.useRef(true);
   const prevStatusRef = React.useRef<string | undefined>(undefined);
 
-  const submitMessage = async (msgText: string, file: File | null) => {
+  const submitMessage = async (msgText: string, file: File | null, opts?: { asHumanAnswer?: boolean }) => {
     if ((!msgText.trim() && !file) || !activeWork) return;
     
     setIsWaiting(true);
@@ -97,29 +100,56 @@ export default function DeepSeekCopilot({
       commitCurrentHistory();
     }
 
-    // LS94: if the work is waiting for a BLOCKING INFORMATION request, feed the user's message
-    // directly as the answer to that request (the chat doubles as the data input), so the
-    // pipeline resumes and can produce a concrete recommendation — instead of only asking for
-    // data and never advancing.
+    // LS94 + HITL identity contract: the chat doubles as the data input ONLY for an EXPLICIT human
+    // answer (`asHumanAnswer`). Auto-narration (mount auto-submit) and viewer questions
+    // ("eureka:ask-copilot") must NEVER be consumed as the human's answer — that turned the original
+    // question into an answer (the echo of WORK-D120C202) and, on every remount, into a SECOND POST.
     try {
       const infoWork = useWorkStore.getState().activeWork as any;
-      const workId = infoWork?.work?.workId || infoWork?.work?.work_id || infoWork?.work_id;
+      const workId = activeWorkWorkId(infoWork);
       const hreq = infoWork?.human_requests || [];
       const infoReq = hreq.find((h: any) => h.type === 'INFORMATION' && h.blocking && String(h.status || '').toUpperCase() === 'PENDING');
-      if (workId && infoReq) {
-        const apiUrl = API_BASE;
-        const answer = await fetch(`${apiUrl}/api/work/${workId}/human_input`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ type: 'INFORMATION', request_id: infoReq.request_id || infoReq.id, value: msgText }),
-        });
-        if (answer.ok) {
+      if (workId && infoReq && shouldRouteToHumanGate(opts, Boolean(infoReq))) {
+        // (a) ASSOCIATION: the request must belong to the work we are about to address.
+        if (!requestBelongsToWork(infoReq.work_id, workId)) {
+          currentHistory.push({ sender: 'EUREKA', text: 'ERROR DE IDENTIDAD: la solicitud HITL pertenece a otro trabajo. No se envía la respuesta.' });
+          commitCurrentHistory();
+          setIsWaiting(false);
+          return;
+        }
+        // (b) SINGLE-FLIGHT: one submission per (work, request) — a remount/duplicate event is dropped.
+        const requestId = String(infoReq.request_id || infoReq.id || '');
+        if (!beginHumanSubmit(workId, requestId)) {
+          currentHistory.push({ sender: 'EUREKA', text: 'Ya hay un envío en curso para esta solicitud; no se duplica.' });
+          commitCurrentHistory();
+          setIsWaiting(false);
+          return;
+        }
+        try {
+          const apiUrl = API_BASE;
+          const answer = await fetch(`${apiUrl}/api/work/${workId}/human_input`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ type: 'INFORMATION', request_id: requestId, value: msgText }),
+          });
+          if (!answer.ok) {
+            const detail = await answer.json().catch(() => null);
+            const code = detail?.detail?.reason_code || `HTTP ${answer.status}`;
+            const message = detail?.detail?.message || 'No se pudo registrar la respuesta humana.';
+            currentHistory.push({ sender: 'EUREKA', text: `La respuesta humana fue RECHAZADA (${code}): ${message}` });
+            commitCurrentHistory();
+            setIsWaiting(false);
+            void useWorkStore.getState().pollState?.();
+            return;
+          }
           // Governed HITL contract: RECEIVED != SUFFICIENT. The backend returns the Python verdict on
           // the CONTENT of the answer; never claim the analysis continues if the data was insufficient.
           let payload: any = null;
           try { payload = await answer.json(); } catch { /* no body -> fall back to neutral text */ }
           const verdict = String(payload?.human_response_sufficiency || '').toUpperCase();
-          if (verdict === 'SUFFICIENT') {
+          if (payload?.status === 'IDEMPOTENT_REPLAY') {
+            currentHistory.push({ sender: 'EUREKA', text: `Esta respuesta ya estaba registrada (${verdict || 'sin cambio'}); no se duplicó.` });
+          } else if (verdict === 'SUFFICIENT') {
             currentHistory.push({ sender: 'EUREKA', text: '✓ Gracias — he recibido tu información y continúo el análisis.' });
           } else if (verdict) {
             currentHistory.push({ sender: 'EUREKA', text: `La información recibida no es suficiente (${verdict}). EUREKA te pedirá de nuevo, de forma concreta, los datos que siguen faltando; nada se publicará hasta recibirlos.` });
@@ -132,6 +162,8 @@ export default function DeepSeekCopilot({
           // follow-up INFORMATION request is now pending.
           void useWorkStore.getState().pollState?.();
           return; // don't route to the copilot; the pipeline either resumes with the data or re-asks
+        } finally {
+          endHumanSubmit(workId, requestId);
         }
       }
     } catch (_e) { /* if the info-submit fails, fall through to the copilot */ }
@@ -462,7 +494,8 @@ ${governed}`;
 
   const handleChatSubmit = () => {
     if (isWaiting) return;
-    submitMessage(input, selectedFile);
+    // An EXPLICIT user send from the chat IS a human answer: it may close the HITL gate.
+    submitMessage(input, selectedFile, { asHumanAnswer: true });
     setInput('');
     setSelectedFile(null);
   };
@@ -489,7 +522,10 @@ ${governed}`;
   React.useEffect(() => {
     if (activeWork && history.length === 0 && !isWaiting && !hasInitializedRef.current) {
       hasInitializedRef.current = true;
-      submitMessage(activeWork.work.userIntent, null);
+      // { asHumanAnswer: false } — this is a NARRATION of the user's own intent, never the human's
+      // answer to an open HITL request. Without the flag this auto-submit posted the ORIGINAL
+      // QUESTION as the human answer (the production echo) on every mount/remount.
+      submitMessage(activeWork.work.userIntent, null, { asHumanAnswer: false });
     }
   }, [activeWork, history.length, isWaiting]);
 
@@ -503,7 +539,8 @@ ${governed}`;
       const q = (ev as CustomEvent).detail?.question;
       if (q && !isWaiting) {
         hasInitializedRef.current = true;
-        submitMessage(String(q), null);
+        // A viewer QUESTION (Cognitive View) is not the human's ANSWER to an open HITL request.
+        submitMessage(String(q), null, { asHumanAnswer: false });
       }
     };
     window.addEventListener('eureka:ask-copilot', handler);
