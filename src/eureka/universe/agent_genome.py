@@ -718,11 +718,16 @@ class EmergentAgentRecord(BaseModel):
 
 
 class AgentNetworkState(BaseModel):
-    """Canonical container of a Work's EMERGENT agents. Default empty (backwards compatible)."""
+    """Canonical container of a Work's EMERGENT agents (+ their executions). Default empty.
+
+    Both the registered agents and their execution records live HERE, inside the Work's canonical
+    state, so the Work/WorkStore remains the single persistence authority (no AgentStore).
+    """
 
     model_config = ConfigDict(extra="forbid")
 
     records: List[EmergentAgentRecord] = Field(default_factory=list)
+    executions: List["AgentExecutionRecord"] = Field(default_factory=list)
 
     def by_id(self, agent_id: str) -> Optional[EmergentAgentRecord]:
         return next((r for r in self.records if r.agent_id == agent_id), None)
