@@ -4,6 +4,7 @@ from .work_model import EurekaWork
 from .problem_model import ProblemModel
 from .agent_definition import AgentDefinition
 from .agent_genome import AgentNetworkState
+from .problem_compiler import ProblemCompilation
 import uuid
 import datetime
 
@@ -527,6 +528,10 @@ class CanonicalWorkState(BaseModel):
     core_analysis: Optional[CoreAnalysis] = None
     # Loop 84: EM Installer `agent_definition` + deployment/lifecycle (single EM).
     agent_deployment: Optional[AgentDeployment] = None
+    # LOOP 4: ProblemCompiler ENRICHMENT (candidates + rejections). Planning artifact, NOT content:
+    # deliberately outside `canonical_identity._payload` and `EMPublisher._freeze_signature` (exactly
+    # like `execution_plan`), so it never alters the canonical content identity of a work.
+    problem_compilation: Optional[ProblemCompilation] = None
 
     # Deprecated flat pipeline, kept for immediate backward compatibility but should use execution_plan
     resolved_pipeline: list[str] = []

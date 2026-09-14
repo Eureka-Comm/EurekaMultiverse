@@ -6,6 +6,7 @@ from .work_model import EurekaWork
 from .capability_fabric import CapabilityRegistry
 from .canonical_state import CanonicalWorkState, VisualizationBinding, StateCondition, ExecutionPlan, ExecutionStep, build_core_analysis
 from .problem_model import ProblemModel, TaskNetwork, StructuredProblem, CognitiveTask
+from .problem_compiler import ProblemCompiler
 from .cognitive_engine import CognitiveEngine, SemanticProposal, StructuralProposal, record_runtime_call
 
 logger = logging.getLogger(__name__)
@@ -558,6 +559,10 @@ class WorkOrchestrator:
         self.cap_registry = capability_registry
         self.interpreter = EMCoreInterpreter(capability_registry, cognitive_engine)
         self.structurer = EMStructurer(capability_registry, cognitive_engine)
+        # LOOP 4: compilation ENRICHMENT service (candidate generation only). It is NOT a second
+        # authority: it reads the governed problem + the Structurer's TaskNetwork and returns a
+        # traceable compilation artifact; it never routes, never creates agents, never persists.
+        self.problem_compiler = ProblemCompiler(capability_registry)
 
     def orchestrate(self, user_intent: str) -> CanonicalWorkState:
         # 1. Intent -> Governed Problem
@@ -723,6 +728,24 @@ class WorkOrchestrator:
             )
         except Exception:
             pass  # telemetry never breaks the pipeline
+
+        # LOOP 4: ProblemCompiler ENRICHMENT (candidate generation only — NOT a second compilation
+        # authority). It runs AFTER the Structurer has compiled the TaskNetwork, reads the governed
+        # problem + the network + Core's plan, and attaches a traceable candidate artifact to the
+        # canonical state. The network itself is never touched (a mutation attempt fails closed), no
+        # agent is created/authorized, no routing decision is taken, and nothing is persisted by it.
+        # When the Structurer failed/was blocked there is no compiled network, so the enrichment is
+        # honestly absent (None = NOT_COMPILED) instead of being fabricated.
+        if problem.structured_problem is not None:
+            canonical_state.problem_compilation = self.problem_compiler.compile(
+                problem,
+                problem.structured_problem,
+                work_id=work.work_id,
+                execution_plan=execution_plan,
+                available_evidence_ids=canonical_state.evidence_ids,
+                expected_work_id=work.work_id,
+                expected_problem_id=problem.problem_id,
+            )
 
         # LS77.1 authority HITL gate: if the problem requires human authority, create a real
         # (non-decision) HumanInteractionRequest so the pipeline pauses on a governed HITL
