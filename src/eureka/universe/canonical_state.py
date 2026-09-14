@@ -5,6 +5,7 @@ from .problem_model import ProblemModel
 from .agent_definition import AgentDefinition
 from .agent_genome import AgentNetworkState
 from .problem_compiler import ProblemCompilation
+from .agent_necessity import AgentNecessityReport
 import uuid
 import datetime
 
@@ -532,6 +533,11 @@ class CanonicalWorkState(BaseModel):
     # deliberately outside `canonical_identity._payload` and `EMPublisher._freeze_signature` (exactly
     # like `execution_plan`), so it never alters the canonical content identity of a work.
     problem_compilation: Optional[ProblemCompilation] = None
+    # LOOP 5: Agent Necessity Test report (EVALUATION ONLY — it never creates an agent). Planning
+    # artifact like `problem_compilation`/`execution_plan`: deliberately outside
+    # `canonical_identity._payload` and `EMPublisher._freeze_signature`, so it cannot alter the
+    # canonical content identity of a work (F4 remains untouched).
+    agent_necessity: Optional[AgentNecessityReport] = None
 
     # Deprecated flat pipeline, kept for immediate backward compatibility but should use execution_plan
     resolved_pipeline: list[str] = []

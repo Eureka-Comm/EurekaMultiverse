@@ -7,6 +7,7 @@ from .capability_fabric import CapabilityRegistry
 from .canonical_state import CanonicalWorkState, VisualizationBinding, StateCondition, ExecutionPlan, ExecutionStep, build_core_analysis
 from .problem_model import ProblemModel, TaskNetwork, StructuredProblem, CognitiveTask
 from .problem_compiler import ProblemCompiler
+from .agent_necessity import AgentNecessityTest
 from .cognitive_engine import CognitiveEngine, SemanticProposal, StructuralProposal, record_runtime_call
 
 logger = logging.getLogger(__name__)
@@ -563,6 +564,10 @@ class WorkOrchestrator:
         # authority: it reads the governed problem + the Structurer's TaskNetwork and returns a
         # traceable compilation artifact; it never routes, never creates agents, never persists.
         self.problem_compiler = ProblemCompiler(capability_registry)
+        # LOOP 5: Agent Necessity Test (EVALUATION ONLY). It reads the LOOP 4 compilation and decides
+        # NOT_NECESSARY / NECESSARY / BLOCKED per candidate. It never creates, registers, authorizes
+        # or executes an agent, never routes and never persists.
+        self.agent_necessity_test = AgentNecessityTest(capability_registry)
 
     def orchestrate(self, user_intent: str) -> CanonicalWorkState:
         # 1. Intent -> Governed Problem
@@ -743,6 +748,18 @@ class WorkOrchestrator:
                 work_id=work.work_id,
                 execution_plan=execution_plan,
                 available_evidence_ids=canonical_state.evidence_ids,
+                expected_work_id=work.work_id,
+                expected_problem_id=problem.problem_id,
+            )
+
+        # LOOP 5: AGENT NECESSITY TEST (evaluation only). Deterministic, reuse-first and fail-closed:
+        # it decides NOT_NECESSARY / NECESSARY / BLOCKED for each LOOP 4 candidate. A NECESSARY verdict
+        # only asserts that an emergent unit could be JUSTIFIED; it creates/registers/authorizes
+        # nothing (AgentFactory/AgentRegistry/AgentRuntime belong to later, separately-gated loops).
+        if canonical_state.problem_compilation is not None:
+            canonical_state.agent_necessity = self.agent_necessity_test.evaluate_compilation(
+                canonical_state.problem_compilation,
+                canonical_state=canonical_state,
                 expected_work_id=work.work_id,
                 expected_problem_id=problem.problem_id,
             )
