@@ -1,6 +1,13 @@
 from pydantic import BaseModel, Field, ConfigDict
 from typing import List, Dict, Any
 
+# COMPATIBILITY SURFACE — NOT AN AUTHORITY.
+# The single canonical contract for the identity/configuration of an agent is
+# `universe/agent_genome.py::AgentGenome` (EMERGENT COGNITIVE CLOUD, LOOP 1).
+# This class remains only as an internal projection used by the EM Installer artifact
+# (`canonical_state.AgentDeployment`) and the provider-backed engine; mappings live in
+# `agent_genome.genome_from_agent_definition` / `agent_definition_from_genome` (one-way adapters).
+# Do NOT model new agent concepts on this class.
 class AgentDefinition(BaseModel):
     """Definition of a Cognitive Provider agent.
 
