@@ -3,6 +3,7 @@ from pydantic import BaseModel, Field, model_validator
 from .work_model import EurekaWork
 from .problem_model import ProblemModel
 from .agent_definition import AgentDefinition
+from .agent_genome import AgentNetworkState
 import uuid
 import datetime
 
@@ -542,6 +543,11 @@ class CanonicalWorkState(BaseModel):
     decision_points: List[HumanDecisionPoint] = Field(default_factory=list)
     human_contributions: List[HumanKnowledgeContribution] = Field(default_factory=list)
     human_decision: Optional[HumanDecision] = None
+
+    # EMERGENT COGNITIVE CLOUD (LOOP 2): the Work's emergent agent network. Persisted HERE (the Work
+    # remains the authority of belonging/state); the AgentRegistry is only a DERIVED index over it.
+    # Default empty -> fully backwards compatible with works persisted before this field existed.
+    agent_network: AgentNetworkState = Field(default_factory=AgentNetworkState)
 
     
     # State tracking

@@ -487,9 +487,13 @@ class AgentGenome(BaseModel):
             raise AgentContractError("FROZEN_GENOME_MUTATION", self.agent_id)
 
     def assert_no_authority_escalation(self, candidate: Dict[str, Any]) -> None:
-        """Reject any payload that tries to change authority/ownership/identity/policy."""
-        immutable = ("authority_scope", "cognitive_family", "network_role", "work_id", "problem_id",
-                     "identity", "created_by", "return_to")
+        """Reject any payload that tries to change authority/ownership/identity/policy.
+
+        Scope fields (work_id/problem_id) are NOT listed here: they are validated by the caller with
+        the more specific CROSS_WORK_CONTAMINATION / CROSS_PROBLEM_CONTAMINATION codes.
+        """
+        immutable = ("authority_scope", "cognitive_family", "network_role", "identity",
+                     "created_by", "return_to")
         for key in immutable:
             if key in candidate and candidate[key] != self.model_dump(mode="json").get(key):
                 raise AgentContractError("AUTHORITY_ESCALATION_ATTEMPT", key)
@@ -642,6 +646,89 @@ class AgentExecutionRecord(BaseModel):
     def advance(self, new: AgentStatus) -> "AgentExecutionRecord":
         self.status = transition(self.status, new)
         return self
+
+
+# --------------------------------------------------------------------------------------------- #
+# LOOP 2 — persisted agent-network shapes (canonical, Work-scoped). NO new store: these live
+# inside CanonicalWorkState.agent_network and are persisted by the existing WorkStore authority.
+# --------------------------------------------------------------------------------------------- #
+
+#: The permanent constitutional nucleus. Read-only references: the registry never owns them and
+#: never creates them — it only guarantees the EMERGENT layer stays distinct from them.
+CONSTITUTIONAL_EM: Tuple[str, ...] = ("EM Core", "EM Structurer", "EM Descriptor", "EM Predictor",
+                                      "EM Prescriptor", "EM Actioner", "EM Installer", "EM Publisher")
+
+
+class LifecycleEvent(BaseModel):
+    """One governed lifecycle transition (append-only history: the audit trail of an agent)."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    at: str = Field(default_factory=lambda: datetime.datetime.now(datetime.timezone.utc).isoformat())
+    from_status: Optional[AgentStatus] = None
+    to_status: AgentStatus
+    actor: str = Field(..., min_length=1)
+    reason: str = ""
+
+
+class EmergentAgentRecord(BaseModel):
+    """A registered EMERGENT agent: its genome + canonical lifecycle state + audit history.
+
+    Persisted inside the Work's canonical state (`CanonicalWorkState.agent_network`). The registry is
+    a DERIVED index over these records; it is never a second persistence authority.
+    """
+
+    model_config = ConfigDict(extra="forbid")
+
+    genome: AgentGenome
+    status: AgentStatus = AgentStatus.CREATED
+    history: List[LifecycleEvent] = Field(default_factory=list)
+    provenance: List[str] = Field(default_factory=list)
+    supersedes: Optional[str] = None
+    superseded_by: Optional[str] = None
+    frozen_genome_hash: str = ""
+    registered_at: str = Field(default_factory=lambda: datetime.datetime.now(
+        datetime.timezone.utc).isoformat())
+    updated_at: str = Field(default_factory=lambda: datetime.datetime.now(
+        datetime.timezone.utc).isoformat())
+
+    @property
+    def agent_id(self) -> str:
+        return self.genome.agent_id
+
+    @property
+    def work_id(self) -> str:
+        return self.genome.work_id
+
+    @property
+    def problem_id(self) -> str:
+        return self.genome.problem_id
+
+    @property
+    def cognitive_owner(self) -> str:
+        return self.genome.cognitive_owner
+
+    def assert_frozen_integrity(self) -> None:
+        """A FROZEN agent's genome can never change (tamper evidence)."""
+        if self.status is AgentStatus.FROZEN:
+            if not self.frozen_genome_hash:
+                raise AgentContractError("FROZEN_AGENT_WITHOUT_HASH", self.agent_id)
+            if self.frozen_genome_hash != self.genome.hash():
+                raise AgentContractError("FROZEN_GENOME_MUTATION", self.agent_id)
+
+
+class AgentNetworkState(BaseModel):
+    """Canonical container of a Work's EMERGENT agents. Default empty (backwards compatible)."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    records: List[EmergentAgentRecord] = Field(default_factory=list)
+
+    def by_id(self, agent_id: str) -> Optional[EmergentAgentRecord]:
+        return next((r for r in self.records if r.agent_id == agent_id), None)
+
+    def ids(self) -> List[str]:
+        return [r.agent_id for r in self.records]
 
 
 # --------------------------------------------------------------------------------------------- #
