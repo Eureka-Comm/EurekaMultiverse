@@ -173,6 +173,9 @@ class AgentRegistry:
                 ) -> EmergentAgentRecord:
         """The ONLY way to move an agent's lifecycle (enforces the single transitions table)."""
         record = self.resolve(agent_id)
+        # LOOP 9 hardening: the record's genome must still belong to THIS work/problem, otherwise a
+        # contaminated record could be advanced (the same guard `register` already applies).
+        self._assert_bound_scope(record.genome)
         allowed = [CORE_ACTOR]
         # An agent may only report the outcome of ITS OWN execution.
         if new_status in (AgentStatus.RETURNED, AgentStatus.FAILED):
