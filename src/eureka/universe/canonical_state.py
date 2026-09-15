@@ -7,6 +7,7 @@ from .agent_genome import AgentNetworkState
 from .problem_compiler import ProblemCompilation
 from .agent_necessity import AgentNecessityReport
 from .agent_genome_proposal import AgentGenomeProposal
+from .agent_factory import RegistrationRequest
 import uuid
 import datetime
 
@@ -543,6 +544,11 @@ class CanonicalWorkState(BaseModel):
     # of planning artifact as `problem_compilation`/`agent_necessity`: deliberately outside
     # `canonical_identity._payload` and `EMPublisher._freeze_signature` (F4 remains untouched).
     agent_genome_proposals: List[AgentGenomeProposal] = Field(default_factory=list)
+    # LOOP 7: registration REQUESTS prepared by the AgentFactory. HARD STOP entity: a validated
+    # request is still only a request — it registers nothing. Domain objects kept inside the
+    # canonical container (persisted by the EXISTING WorkStore; no RegistrationStore), and outside
+    # `canonical_identity._payload` / `EMPublisher._freeze_signature` (F4 untouched).
+    agent_registration_requests: List[RegistrationRequest] = Field(default_factory=list)
 
     # Deprecated flat pipeline, kept for immediate backward compatibility but should use execution_plan
     resolved_pipeline: list[str] = []

@@ -9,6 +9,7 @@ from .problem_model import ProblemModel, TaskNetwork, StructuredProblem, Cogniti
 from .problem_compiler import ProblemCompiler
 from .agent_necessity import AgentNecessityTest
 from .agent_genome_proposal import AgentGenomeDesigner
+from .agent_factory import AgentFactory
 from .cognitive_engine import CognitiveEngine, SemanticProposal, StructuralProposal, record_runtime_call
 
 logger = logging.getLogger(__name__)
@@ -572,6 +573,9 @@ class WorkOrchestrator:
         # LOOP 6: genome PROPOSAL designer (design only). It turns a NECESSARY verdict into a formal
         # AgentGenome proposal; it never registers, activates, executes, routes or calls a model.
         self.agent_genome_designer = AgentGenomeDesigner(capability_registry)
+        # LOOP 7: AgentFactory PREREQUISITES — prepares and validates a RegistrationRequest. It is a
+        # PREPARER/VALIDATOR only: it never registers, activates, executes or selects a provider.
+        self.agent_factory = AgentFactory(capability_registry)
 
     def orchestrate(self, user_intent: str) -> CanonicalWorkState:
         # 1. Intent -> Governed Problem
@@ -782,6 +786,25 @@ class WorkOrchestrator:
                     self.agent_genome_designer.propose(
                         evaluation,
                         candidate=candidates.get(evaluation.candidate_id),
+                        canonical_state=canonical_state,
+                    )
+                )
+
+        # LOOP 7: AGENTFACTORY PREREQUISITES (prepare + validate ONLY). Each formally valid genome
+        # proposal is turned into a governed, traceable, fail-closed RegistrationRequest and the
+        # pipeline STOPS there: the request is a DOMAIN OBJECT held inside the canonical state.
+        # RegistrationRequest -> AgentRegistry.register() belongs to a FUTURE loop: no agent is
+        # registered, activated or executed here, no runtime/model is invoked and nothing is mutated.
+        if canonical_state.agent_genome_proposals:
+            proposals_by_id = {p.proposal_id: p for p in canonical_state.agent_genome_proposals}
+            candidates_by_id = {c.candidate_id: c for c in canonical_state.problem_compilation.candidates} \
+                if canonical_state.problem_compilation is not None else {}
+            for proposal in canonical_state.agent_genome_proposals:
+                canonical_state.agent_registration_requests.append(
+                    self.agent_factory.prepare_registration_request(
+                        proposals_by_id.get(proposal.proposal_id),
+                        candidate=candidates_by_id.get(proposal.candidate_id),
+                        compilation=canonical_state.problem_compilation,
                         canonical_state=canonical_state,
                     )
                 )

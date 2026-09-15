@@ -458,6 +458,22 @@ class _Context:
                 if getattr(cap, "canonical_em", None) == owner]
 
 
+def detect_escalation_intent(text: str) -> Optional[str]:
+    """Public wrapper over the SAME escalation detectors the necessity test uses (one implementation).
+
+    Returns the necessity reason code for the escalation the text attempts, or None. Used by later
+    loops (LOOP 7 factory) so the rule is never duplicated.
+    """
+    text = text or ""
+    if _SELF_VALIDATION_RE.search(text):
+        return NECESSITY_SELF_VALIDATION
+    if _AUTHORITY_ESCALATION_RE.search(text):
+        return NECESSITY_AUTHORITY_ESCALATION
+    if _ROUTING_ESCALATION_RE.search(text):
+        return NECESSITY_ROUTING_ESCALATION
+    return None
+
+
 def _common(candidate: ProblemCandidate, ctx: _Context, decision: NecessityDecision,
             reason_code: str, **overrides: Any) -> NecessityEvaluation:
     data: Dict[str, Any] = dict(

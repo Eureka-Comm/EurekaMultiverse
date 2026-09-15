@@ -672,6 +672,14 @@ def _derive_dependencies(agent_id: str, request: GenomeDesignRequest, canonical_
     return dependencies, None
 
 
+def existing_responsibility_coverage(canonical_state: Any, target: str) -> Optional[str]:
+    """Public wrapper over the SAME coverage rule the designer uses (one implementation).
+
+    Returns a description of the existing task that already covers ``target``, or None.
+    """
+    return _existing_coverage(canonical_state, target)
+
+
 def _identity_collision(identity: AgentIdentity, canonical_state: Any) -> Optional[str]:
     """One identity means ONE agent: an existing registered agent with this id is a collision."""
     network = getattr(canonical_state, "agent_network", None)
