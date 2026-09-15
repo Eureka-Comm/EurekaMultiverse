@@ -6,6 +6,7 @@ from .agent_definition import AgentDefinition
 from .agent_genome import AgentNetworkState
 from .problem_compiler import ProblemCompilation
 from .agent_necessity import AgentNecessityReport
+from .agent_genome_proposal import AgentGenomeProposal
 import uuid
 import datetime
 
@@ -538,6 +539,10 @@ class CanonicalWorkState(BaseModel):
     # `canonical_identity._payload` and `EMPublisher._freeze_signature`, so it cannot alter the
     # canonical content identity of a work (F4 remains untouched).
     agent_necessity: Optional[AgentNecessityReport] = None
+    # LOOP 6: genome PROPOSALS (PROPOSAL ONLY — nothing is registered/activated/executed). Same class
+    # of planning artifact as `problem_compilation`/`agent_necessity`: deliberately outside
+    # `canonical_identity._payload` and `EMPublisher._freeze_signature` (F4 remains untouched).
+    agent_genome_proposals: List[AgentGenomeProposal] = Field(default_factory=list)
 
     # Deprecated flat pipeline, kept for immediate backward compatibility but should use execution_plan
     resolved_pipeline: list[str] = []

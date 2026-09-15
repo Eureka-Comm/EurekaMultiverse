@@ -8,6 +8,7 @@ from .canonical_state import CanonicalWorkState, VisualizationBinding, StateCond
 from .problem_model import ProblemModel, TaskNetwork, StructuredProblem, CognitiveTask
 from .problem_compiler import ProblemCompiler
 from .agent_necessity import AgentNecessityTest
+from .agent_genome_proposal import AgentGenomeDesigner
 from .cognitive_engine import CognitiveEngine, SemanticProposal, StructuralProposal, record_runtime_call
 
 logger = logging.getLogger(__name__)
@@ -568,6 +569,9 @@ class WorkOrchestrator:
         # NOT_NECESSARY / NECESSARY / BLOCKED per candidate. It never creates, registers, authorizes
         # or executes an agent, never routes and never persists.
         self.agent_necessity_test = AgentNecessityTest(capability_registry)
+        # LOOP 6: genome PROPOSAL designer (design only). It turns a NECESSARY verdict into a formal
+        # AgentGenome proposal; it never registers, activates, executes, routes or calls a model.
+        self.agent_genome_designer = AgentGenomeDesigner(capability_registry)
 
     def orchestrate(self, user_intent: str) -> CanonicalWorkState:
         # 1. Intent -> Governed Problem
@@ -763,6 +767,24 @@ class WorkOrchestrator:
                 expected_work_id=work.work_id,
                 expected_problem_id=problem.problem_id,
             )
+
+        # LOOP 6: EMERGENT AGENT GENOME PROPOSAL (design only). Every LOOP 5 NECESSARY verdict is
+        # turned into a formal AgentGenome PROPOSAL (embedded unmodified, authority_scope=PROPOSER,
+        # CANDIDATE-only output, narrow TaskEnvelope, bounded budget, no provider selection). Nothing
+        # is registered/activated/executed here — AgentFactory/AgentRegistry/AgentRuntime are later,
+        # separately-gated loops. Non-NECESSARY verdicts produce an explicit REJECTED proposal.
+        if canonical_state.problem_compilation is not None and canonical_state.agent_necessity is not None:
+            candidates = {c.candidate_id: c for c in canonical_state.problem_compilation.candidates}
+            for evaluation in canonical_state.agent_necessity.evaluations:
+                if evaluation.decision.value != "NECESSARY":
+                    continue
+                canonical_state.agent_genome_proposals.append(
+                    self.agent_genome_designer.propose(
+                        evaluation,
+                        candidate=candidates.get(evaluation.candidate_id),
+                        canonical_state=canonical_state,
+                    )
+                )
 
         # LS77.1 authority HITL gate: if the problem requires human authority, create a real
         # (non-decision) HumanInteractionRequest so the pipeline pauses on a governed HITL
