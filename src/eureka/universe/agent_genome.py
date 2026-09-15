@@ -161,6 +161,28 @@ def transition(current: AgentStatus, new: AgentStatus) -> AgentStatus:
 # --------------------------------------------------------------------------------------------- #
 _SLUG_RE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9_]{0,63}$")
 
+# ----------------------------------------------------------------------------------------------- #
+# LOOP 6R / F11 — AgentGenome hash semantics (semantic identity vs metadata)
+# ----------------------------------------------------------------------------------------------- #
+#: Version of the hash produced by ``AgentGenome.hash()`` (semantic content identity).
+HASH_VERSION_V2 = "V2"
+#: LEGACY version (included created_at and provenance) — kept for verification, never produced anew.
+HASH_VERSION_V1 = "V1"
+#: VOLATILE generation metadata: never part of semantic identity.
+VOLATILE_METADATA_KEYS: frozenset = frozenset({"created_at"})
+#: LIFECYCLE metadata: never part of semantic identity (excluded since before the repair).
+LIFECYCLE_METADATA_KEYS: frozenset = frozenset({"frozen"})
+#: EVIDENCE/AUDIT metadata: describes HOW the genome came to be, not WHAT it is. Excluded from the
+#: semantic hash, covered by ``audit_hash()`` so the trail stays tamper-evident.
+EVIDENCE_METADATA_KEYS: frozenset = frozenset({"provenance"})
+
+
+def _digest(payload: Dict[str, Any]) -> str:
+    """Deterministic SHA-256 of a JSON payload (sorted keys, no whitespace)."""
+    blob = json.dumps(payload, sort_keys=True, separators=(",", ":"), ensure_ascii=False)
+    return hashlib.sha256(blob.encode("utf-8")).hexdigest()
+
+
 _FAMILY_PREFIX: Dict[CognitiveFamily, str] = {
     CognitiveFamily.STRUCT: "STRUCT",
     CognitiveFamily.DESCRIPTOR: "DESC",
@@ -469,12 +491,58 @@ class AgentGenome(BaseModel):
         if chosen_model not in (allowed_models or []):
             raise AgentContractError("UNAUTHORIZED_MODEL", f"{chosen_model} not in authorized set")
 
-    def hash(self) -> str:
-        """Canonical content hash of the genome (frozen-genome tamper evidence)."""
+    def semantic_payload(self) -> Dict[str, Any]:
+        """The SEMANTIC identity of the genome (LOOP 6R / F11 repair).
+
+        Included: every field that describes WHAT the unit is and is allowed to do.
+        EXCLUDED (with the reason, so the classification is auditable):
+          * ``created_at``  -> VOLATILE generation metadata (wall clock; not content);
+          * ``frozen``      -> LIFECYCLE metadata (already excluded before the repair);
+          * ``provenance``  -> EVIDENCE/AUDIT metadata (how the genome came to be, not what it is).
+        The audit trail stays tamper-evident through ``audit_hash()``.
+        """
         payload = self.model_dump(mode="json")
-        payload.pop("frozen", None)   # freezing is metadata, not content identity
-        blob = json.dumps(payload, sort_keys=True, separators=(",", ":"), ensure_ascii=False)
-        return hashlib.sha256(blob.encode("utf-8")).hexdigest()
+        for key in VOLATILE_METADATA_KEYS | LIFECYCLE_METADATA_KEYS | EVIDENCE_METADATA_KEYS:
+            payload.pop(key, None)
+        return payload
+
+    def hash(self) -> str:
+        """SEMANTIC content hash (V2, default): identical meaning -> identical hash.
+
+        F11 repair: this no longer contains ``created_at`` (or ``provenance``), so two genomes with
+        the same content hash equally no matter when they were built. ``hash_v1()`` keeps the LEGACY
+        payload so historical hashes remain verifiable (no silent migration).
+        """
+        return _digest(self.semantic_payload())
+
+    def hash_v1(self) -> str:
+        """LEGACY (V1) hash payload kept for verifying hashes produced BEFORE the F11 repair.
+
+        V1 included ``created_at`` and ``provenance`` (only ``frozen`` was excluded).
+        """
+        payload = self.model_dump(mode="json")
+        payload.pop("frozen", None)
+        return _digest(payload)
+
+    def audit_hash(self) -> str:
+        """Tamper evidence over the AUDIT TRAIL *and* the semantic content (provenance included)."""
+        payload = dict(self.semantic_payload())
+        payload["provenance"] = list(self.provenance)
+        return _digest(payload)
+
+    def hash_version(self) -> str:
+        """The version of the hash produced by ``hash()`` (V2 = semantic identity)."""
+        return HASH_VERSION_V2
+
+    def verify_hash(self, value: str) -> Optional[str]:
+        """Return the hash version a stored value corresponds to, else None (no silent migration)."""
+        if not value:
+            return None
+        if value == self.hash():
+            return HASH_VERSION_V2
+        if value == self.hash_v1():
+            return HASH_VERSION_V1
+        return None
 
     def freeze(self) -> "AgentGenome":
         """Freeze the genome. A frozen genome is content-immutable (see `assert_compatible_with`)."""
@@ -482,7 +550,7 @@ class AgentGenome(BaseModel):
         return self
 
     def assert_compatible_with(self, other: "AgentGenome") -> None:
-        """A frozen genome can never be silently mutated: the content hash must be unchanged."""
+        """A frozen genome can never be silently mutated: the SEMANTIC hash must be unchanged."""
         if self.frozen and self.hash() != other.hash():
             raise AgentContractError("FROZEN_GENOME_MUTATION", self.agent_id)
 
@@ -687,6 +755,9 @@ class EmergentAgentRecord(BaseModel):
     supersedes: Optional[str] = None
     superseded_by: Optional[str] = None
     frozen_genome_hash: str = ""
+    #: LOOP 6R: which hash VERSION produced `frozen_genome_hash`. Legacy records default to V1, so
+    #: historical hashes keep verifying (no silent migration; the label must match the hash).
+    frozen_genome_hash_version: str = Field(HASH_VERSION_V1, pattern="^(V1|V2)$")
     registered_at: str = Field(default_factory=lambda: datetime.datetime.now(
         datetime.timezone.utc).isoformat())
     updated_at: str = Field(default_factory=lambda: datetime.datetime.now(
@@ -709,12 +780,25 @@ class EmergentAgentRecord(BaseModel):
         return self.genome.cognitive_owner
 
     def assert_frozen_integrity(self) -> None:
-        """A FROZEN agent's genome can never change (tamper evidence)."""
-        if self.status is AgentStatus.FROZEN:
-            if not self.frozen_genome_hash:
-                raise AgentContractError("FROZEN_AGENT_WITHOUT_HASH", self.agent_id)
-            if self.frozen_genome_hash != self.genome.hash():
-                raise AgentContractError("FROZEN_GENOME_MUTATION", self.agent_id)
+        """A FROZEN agent's genome can never change (tamper evidence).
+
+        LOOP 6R: the stored hash is verified against BOTH hash versions, so a record frozen BEFORE the
+        F11 repair (V1) still verifies while a NEW freeze uses the semantic hash (V2). Accepting
+        either version is not a bypass: the comparison is always a recomputation over the SAME genome,
+        so any real mutation fails under both. The declared version must match the hash that verifies
+        (a mismatch means a hash was re-labelled without migrating it -> fail closed).
+        """
+        if self.status is not AgentStatus.FROZEN:
+            return
+        if not self.frozen_genome_hash:
+            raise AgentContractError("FROZEN_AGENT_WITHOUT_HASH", self.agent_id)
+        version = self.genome.verify_hash(self.frozen_genome_hash)
+        if version is None:
+            raise AgentContractError("FROZEN_GENOME_MUTATION", self.agent_id)
+        if self.frozen_genome_hash_version != version:
+            raise AgentContractError(
+                "FROZEN_HASH_VERSION_MISMATCH",
+                f"declared {self.frozen_genome_hash_version} but the hash verifies as {version}")
 
 
 class AgentNetworkState(BaseModel):

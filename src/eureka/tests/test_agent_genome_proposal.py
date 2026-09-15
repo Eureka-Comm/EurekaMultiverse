@@ -814,20 +814,28 @@ def test_attack_matrix_b_to_m_each_fails_closed():
     assert "register_any_agent" in FORBIDDEN_OPERATIONS
 
 
-def test_f11_assessment_hash_includes_created_at():
-    """F11 (assessed, NOT repaired in LOOP 6): the genome hash is time-dependent.
+def test_f11_repaired_semantic_hash_ignores_created_at():
+    """F11 REPAIRED in LOOP 6R: ``created_at`` is volatile metadata, not semantic identity.
 
-    This is pinned deterministically (no flakiness): two genomes whose ONLY difference is
-    ``created_at`` hash differently, which is what makes AgentRegistry's idempotency clock-dependent.
+    The V1 defect is still pinned by asserting that the LEGACY payload WAS clock-dependent, while the
+    semantic (V2) hash is stable and a CONTENT change still changes it.
     """
+    from src.eureka.universe.agent_genome import HASH_VERSION_V1, HASH_VERSION_V2
     canonical, _, _, evaluation, candidate = _necessary()
     proposal = _designer().propose(evaluation, candidate=candidate, canonical_state=canonical,
                                    now=FIXED)
     genome = proposal.genome
     other = genome.model_copy(deep=True)
     other.created_at = "2027-01-01T00:00:00+00:00"
-    assert genome.hash() != other.hash(), "F11 changed: hash no longer includes created_at"
+    assert genome.hash() == other.hash()                    # SEMANTIC identity is stable
+    assert genome.verify_hash(genome.hash()) == HASH_VERSION_V2
+    assert genome.verify_hash(genome.hash_v1()) == HASH_VERSION_V1
+    assert genome.hash_v1() != other.hash_v1()              # the LEGACY hash was clock-dependent
     assert "created_at" in genome.model_dump(mode="json")
+    # a CONTENT change still changes the semantic hash (tamper evidence intact)
+    mutated = genome.model_copy(deep=True)
+    mutated.objective = "a different objective"
+    assert genome.hash() != mutated.hash()
     # everything EXCEPT the volatile timestamp is identical
     assert {k: v for k, v in genome.model_dump(mode="json").items() if k != "created_at"} == \
         {k: v for k, v in other.model_dump(mode="json").items() if k != "created_at"}

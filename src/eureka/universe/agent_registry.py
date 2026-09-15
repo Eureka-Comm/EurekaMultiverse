@@ -189,7 +189,10 @@ class AgentRegistry:
         previous = record.status
         record.status = next_status
         if next_status is AgentStatus.FROZEN:
+            # LOOP 6R: new freezes use the SEMANTIC hash (V2) and record its version, so tamper
+            # evidence states which semantics produced the stored value (legacy records stay V1).
             record.frozen_genome_hash = record.genome.hash()
+            record.frozen_genome_hash_version = record.genome.hash_version()
         record.history.append(LifecycleEvent(from_status=previous, to_status=next_status,
                                              actor=actor, reason=reason))
         record.updated_at = _utc_iso()

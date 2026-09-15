@@ -1005,18 +1005,33 @@ def test_40_real_orchestrator_e2e_ends_at_a_validated_request_and_stops():
         request.genome_content_reference       # different work/problem is different content
 
 
-def test_f11_interaction_is_documented_and_fail_closed():
-    """LOOP 7's own identity does NOT depend on repaired F11 semantics; the interaction is a STALE."""
+def test_f11_interaction_after_the_loop6r_repair():
+    """F11 is REPAIRED (LOOP 6R): the envelope's genome_hash is now the SEMANTIC hash.
+
+    Post-repair semantics: a created_at-only difference is NOT content, so the envelope still matches
+    and the request stays VALIDATED with the SAME identity; a real CONTENT change is still stale.
+    """
     canonical, compilation, evaluation, candidate, proposal = _ready()
     kwargs = dict(candidate=candidate, compilation=compilation, canonical_state=canonical)
-    request = _factory().prepare_registration_request(proposal, **kwargs)
-    # the request identity is a content reference with volatile metadata excluded
+    request = _factory().prepare_registration_request(proposal, now=FIXED, **kwargs)
+    assert request.status is RegistrationRequestStatus.VALIDATED
+
+    # volatile-only difference: no longer stale (it never was semantic content)
     genome = proposal.genome.model_copy(deep=True)
-    genome.created_at = "2030-01-01T00:00:00+00:00"          # volatile only
+    genome.created_at = "2030-01-01T00:00:00+00:00"
     volatile_only = proposal.model_copy(update={"genome": genome})
-    assert _factory().prepare_registration_request(volatile_only, **kwargs).rejection_codes() == \
-        [REQUEST_STALE_GENOME]                                # the canonical envelope binds the hash
-    # but the CONTENT reference itself ignores the timestamp
-    from src.eureka.universe.agent_factory import _content_hash
-    assert _content_hash(proposal.genome) == _content_hash(volatile_only.genome)
-    assert _content_hash(proposal.genome) == request.genome_content_reference
+    volatile_request = _factory().prepare_registration_request(volatile_only, now=FIXED, **kwargs)
+    assert volatile_request.status is RegistrationRequestStatus.VALIDATED
+    assert volatile_request.request_id == request.request_id
+    assert volatile_request.genome_content_reference == request.genome_content_reference
+
+    # a CONTENT change is still rejected as stale (no weakening of tamper evidence)
+    mutated_genome = proposal.genome.model_copy(deep=True)
+    mutated_genome.objective = "a different objective"
+    assert _factory().prepare_registration_request(
+        proposal.model_copy(update={"genome": mutated_genome}), now=FIXED, **kwargs
+    ).rejection_codes() == [REQUEST_STALE_GENOME]
+
+    # and the semantic hash itself is stable across the volatile difference
+    assert proposal.genome.hash() == volatile_only.genome.hash()
+    assert proposal.genome.hash_v1() != volatile_only.genome.hash_v1()   # the legacy payload was not
