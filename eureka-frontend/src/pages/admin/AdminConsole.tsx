@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Users, UserCheck, CalendarClock, CalendarDays, Search, Download, MoreHorizontal, RefreshCw, RotateCcw, ScrollText, BarChart3, ChevronLeft, ChevronRight } from 'lucide-react';
-import { adminListUsers, adminUserActivity, adminChangeRole, adminSetStatus, adminReportLogins, adminAudit, adminDashboard, adminExportUsers } from '../../lib/authApi';
+import { Users, UserCheck, CalendarClock, CalendarDays, Search, Download, MoreHorizontal, RefreshCw, RotateCcw, ScrollText, BarChart3, ChevronLeft, ChevronRight, X } from 'lucide-react';
+import { adminListUsers, adminUserActivity, adminChangeRole, adminSetStatus, adminSetPassword, adminReportLogins, adminAudit, adminDashboard, adminExportUsers } from '../../lib/authApi';
 import { useAuthStore, isSuperAdmin } from '../../store/authStore';
+import { passwordIssues, confirmIssue, canResetPassword, resetBlockedReason } from './adminPasswordReset';
 
 type Tab = 'users' | 'reports' | 'audit';
 interface U { user_id: string; name: string; email: string; phone: string; company: string; role: string; status: string; email_verified?: boolean; phone_verified?: boolean; created_at: string; last_login_at?: string | null; }
@@ -28,6 +29,31 @@ export default function AdminConsole() {
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string | null>(null);
   const superAdmin = isSuperAdmin(user?.role);
+
+  // Admin-initiated password reset — the only recovery path, since /forgot-password has no mailer.
+  const [pwTarget, setPwTarget] = useState<U | null>(null);
+  const [pwValue, setPwValue] = useState('');
+  const [pwConfirm, setPwConfirm] = useState('');
+  const [pwErr, setPwErr] = useState<string | null>(null);
+  const [pwDone, setPwDone] = useState<string | null>(null);
+  const openReset = (u: U) => { setOpenMenu(null); setPwTarget(u); setPwValue(''); setPwConfirm(''); setPwErr(null); setPwDone(null); };
+  const closeReset = () => { setPwTarget(null); setPwValue(''); setPwConfirm(''); setPwErr(null); };
+  const pwIssues = passwordIssues(pwValue, pwTarget?.email ?? '');
+  const pwMismatch = confirmIssue(pwValue, pwConfirm);
+  const canSubmit = !!pwTarget && pwValue.length > 0 && pwIssues.length === 0 && !pwMismatch;
+  const submitReset = async () => {
+    if (!pwTarget || !canSubmit) return;
+    setPwErr(null); setBusy(true);
+    const label = pwTarget.email;
+    try {
+      await adminSetPassword(pwTarget.user_id, pwValue);
+      setPwDone(`Password reset for ${label}. Their previous sessions were revoked.`);
+      closeReset();
+      await loadAll();
+    } catch (e: any) {
+      setPwErr(String(e));
+    } finally { setBusy(false); }
+  };
 
   const run = async (fn: () => Promise<void>) => { setErr(null); setBusy(true); try { await fn(); } catch (e: any) { setErr(String(e)); } finally { setBusy(false); } };
   const loadAll = () => run(async () => { const [u, d] = await Promise.all([adminListUsers({ limit: 500 }), adminDashboard()]); setRows(u.users as U[]); setTotal(u.total); setDash(d); });
@@ -84,6 +110,7 @@ export default function AdminConsole() {
         ))}
       </div>
       {err && <div className="rounded-lg border border-signal-blocked/30 bg-signal-blocked/5 px-4 py-2 text-sm text-signal-blocked">Error (fail-closed): {err}</div>}
+      {pwDone && <div className="rounded-lg border border-signal-action/30 bg-signal-action/5 px-4 py-2 text-sm text-signal-action">{pwDone}</div>}
 
       {tab === 'users' && (
         <div className="space-y-4">
@@ -110,13 +137,15 @@ export default function AdminConsole() {
           <div className="overflow-x-auto rounded-xl border border-border bg-surface shadow-sm">
             <div className="flex items-center justify-between border-b border-border px-4 py-2.5"><span className="text-sm font-medium text-text">Users <span className="text-text-muted">{filtered.length}</span></span><span className="text-xs text-text-muted">Page 1 of 1</span></div>
             <table className="w-full text-sm">
-              <thead><tr className="border-b border-border text-left text-xs uppercase tracking-wide text-text-muted"><th className="w-10 px-4 py-3"><input type="checkbox" aria-label="Select all" className="h-4 w-4 rounded border-border" /></th><th className="w-[20%] px-4 py-3 font-medium">Name</th><th className="w-[24%] px-4 py-3 font-medium">Email</th><th className="w-[12%] px-4 py-3 font-medium">Company</th><th className="w-[13%] px-4 py-3 font-medium">Role</th><th className="w-[11%] px-4 py-3 font-medium">Status</th><th className="w-[14%] px-4 py-3 font-medium">Last Login</th><th className="w-12 px-4 py-3" /></tr></thead>
+              <thead><tr className="border-b border-border text-left text-xs uppercase tracking-wide text-text-muted"><th className="w-10 px-4 py-3"><input type="checkbox" aria-label="Select all" className="h-4 w-4 rounded border-border" /></th><th className="w-[13%] px-4 py-3 font-medium">User ID</th><th className="w-[14%] px-4 py-3 font-medium">Name</th><th className="w-[20%] px-4 py-3 font-medium">Email</th><th className="w-[11%] px-4 py-3 font-medium">Phone</th><th className="w-[10%] px-4 py-3 font-medium">Company</th><th className="w-[9%] px-4 py-3 font-medium">Role</th><th className="w-[9%] px-4 py-3 font-medium">Status</th><th className="w-[10%] px-4 py-3 font-medium">Last Login</th><th className="w-12 px-4 py-3" /></tr></thead>
               <tbody>
                 {filtered.map((u) => (
                   <tr key={u.user_id} className="border-b border-border/40 last:border-0 hover:bg-surface-elevated/40">
                     <td className="px-4 py-3"><input type="checkbox" aria-label={`Select ${u.name}`} className="h-4 w-4 rounded border-border" /></td>
+                    <td className="whitespace-nowrap px-4 py-3 font-mono text-xs text-text-muted">{u.user_id}</td>
                     <td className="px-4 py-3"><div className="flex items-center gap-3"><div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-xs font-semibold" style={{ background: 'var(--eureka-surface-elevated)', color: 'var(--eureka-text-section)' }}>{initials(u.name)}</div><span className="whitespace-nowrap font-medium text-text">{u.name}{isMe(u.email) && <span className="ml-2 rounded bg-signal-cognitive/10 px-1.5 py-0.5 text-[10px] font-medium text-signal-cognitive">You</span>}</span></div></td>
                     <td className="whitespace-nowrap px-4 py-3 text-text-secondary">{u.email}</td>
+                    <td className="whitespace-nowrap px-4 py-3 text-text-secondary">{u.phone || '—'}</td>
                     <td className="px-4 py-3 text-text-secondary">{u.company || '—'}</td>
                     <td className="px-4 py-3"><span className={`inline-flex items-center rounded-full px-2.5 py-1 text-[11px] font-medium ${ROLE_TONE[u.role] ?? ''}`}>{u.role}</span></td>
                     <td className="px-4 py-3"><span className="inline-flex items-center gap-1.5 text-[11px] font-medium text-text-secondary"><span className={`h-1.5 w-1.5 rounded-full ${STATUS_DOT[u.status] ?? 'bg-text-muted'}`} />{u.status}</span></td>
@@ -124,13 +153,14 @@ export default function AdminConsole() {
                     <td className="px-4 py-3"><div className="relative"><button aria-label="Actions" onClick={() => setOpenMenu(openMenu === u.user_id ? null : u.user_id)} className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-border text-text-muted hover:text-text"><MoreHorizontal size={16} /></button>
                       {openMenu === u.user_id && <div className="absolute right-0 z-10 mt-1 w-48 rounded-lg border border-border bg-surface p-1 shadow-lg">
                         <button onClick={() => { setOpenMenu(null); run(async () => { const a = await adminUserActivity(u.user_id); window.alert(`Total logins: ${a.total_logins}\nFirst: ${a.first_login ?? '—'}\nLast: ${a.last_login ?? '—'}`); }); }} className="block w-full rounded-md px-3 py-2 text-left text-sm text-text-secondary hover:bg-surface-elevated">View activity</button>
+                        <button onClick={() => openReset(u)} disabled={!canResetPassword(user?.role, user?.email, u)} title={canResetPassword(user?.role, user?.email, u) ? undefined : 'Only a SUPER_ADMIN may reset an ADMIN or SUPER_ADMIN account'} className="inline-flex w-full items-center gap-2 rounded-md px-3 py-2 text-left text-sm text-text-secondary hover:bg-surface-elevated disabled:cursor-not-allowed disabled:opacity-40"><RotateCcw size={14} /> Reset password</button>
                         {superAdmin && <button onClick={() => { setOpenMenu(null); run(async () => { await adminChangeRole(u.user_id, u.role === 'SUPER_ADMIN' ? 'USER' : 'SUPER_ADMIN'); await loadAll(); }); }} className="block w-full rounded-md px-3 py-2 text-left text-sm text-signal-cognitive hover:bg-surface-elevated">Change role</button>}
                         <button onClick={() => { setOpenMenu(null); run(async () => { await adminSetStatus(u.user_id, u.status === 'DISABLED' ? 'ACTIVE' : 'DISABLED'); await loadAll(); }); }} className={`block w-full rounded-md px-3 py-2 text-left text-sm ${u.status === 'DISABLED' ? 'text-signal-action' : 'text-signal-blocked'} hover:bg-surface-elevated`}>{u.status === 'DISABLED' ? 'Enable' : 'Disable'}</button>
                       </div>}
                     </div></td>
                   </tr>
                 ))}
-                {filtered.length === 0 && <tr><td colSpan={8} className="px-4 py-10 text-center text-sm text-text-muted">No users match your filters.</td></tr>}
+                {filtered.length === 0 && <tr><td colSpan={10} className="px-4 py-10 text-center text-sm text-text-muted">No users match your filters.</td></tr>}
               </tbody>
             </table>
           </div>
@@ -148,6 +178,45 @@ export default function AdminConsole() {
 
       {tab === 'audit' && (
         <div className="overflow-x-auto rounded-xl border border-border bg-surface shadow-sm"><table className="w-full text-sm"><thead><tr className="border-b border-border text-left text-xs uppercase tracking-wide text-text-muted"><th className="px-4 py-3 font-medium">Time</th><th className="px-4 py-3 font-medium">Event</th><th className="px-4 py-3 font-medium">User</th><th className="px-4 py-3 font-medium">Ok</th></tr></thead><tbody>{(audit.events ?? []).map((e: any) => <tr key={e.event_id} className="border-b border-border/40 last:border-0"><td className="px-4 py-3 text-xs text-text-muted">{(e.timestamp ?? '').slice(0, 19)}</td><td className={`px-4 py-3 font-medium ${auditColor(e.event_type)}`}>{e.event_type}</td><td className="px-4 py-3 text-text-secondary">{e.user_id ?? '—'}</td><td className="px-4 py-3"><span className={e.success ? 'text-signal-action' : 'text-signal-blocked'}>{String(e.success)}</span></td></tr>)}{(audit.events ?? []).length === 0 && <tr><td colSpan={4} className="px-4 py-10 text-center text-sm text-text-muted">No security events.</td></tr>}</tbody></table></div>
+      )}
+
+      {/* Admin-initiated password reset — the ONLY recovery path: /forgot-password has no mailer,
+          so without this the admin cannot restore anybody's access. */}
+      {pwTarget && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4" role="dialog" aria-modal="true" aria-label="Reset password">
+          <div className="w-full max-w-md rounded-xl border border-border bg-surface p-5 shadow-2xl">
+            <div className="flex items-start justify-between gap-4">
+              <div className="min-w-0">
+                <h2 className="text-lg font-semibold text-text">Reset password</h2>
+                <p className="mt-0.5 truncate text-xs text-text-muted">{pwTarget.name} · {pwTarget.email} · <span className="font-mono">{pwTarget.user_id}</span></p>
+              </div>
+              <button onClick={closeReset} aria-label="Close" className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-border text-text-muted hover:text-text"><X size={15} /></button>
+            </div>
+
+            <div className="mt-4 space-y-3">
+              <label className="block text-sm text-text-secondary">New password
+                <input type="password" autoComplete="new-password" value={pwValue} onChange={(e) => setPwValue(e.target.value)} aria-label="New password" className="mt-1 h-10 w-full rounded-lg border border-border bg-surface px-3 text-sm text-text outline-none focus:border-signal-cognitive" />
+              </label>
+              <label className="block text-sm text-text-secondary">Confirm password
+                <input type="password" autoComplete="new-password" value={pwConfirm} onChange={(e) => setPwConfirm(e.target.value)} aria-label="Confirm password" className="mt-1 h-10 w-full rounded-lg border border-border bg-surface px-3 text-sm text-text outline-none focus:border-signal-cognitive" />
+              </label>
+              {pwValue.length > 0 && pwIssues.length > 0 && (
+                <ul className="list-inside list-disc space-y-0.5 text-xs text-signal-warning">{pwIssues.map((i) => <li key={i}>{i}</li>)}</ul>
+              )}
+              {pwMismatch && <p className="text-xs text-signal-warning">{pwMismatch}</p>}
+              {pwTarget.status !== 'ACTIVE' && (
+                <p className="rounded-lg border border-signal-warning/30 bg-signal-warning/5 px-3 py-2 text-xs text-signal-warning">{resetBlockedReason(pwTarget)}</p>
+              )}
+              {pwErr && <p className="rounded-lg border border-signal-blocked/30 bg-signal-blocked/5 px-3 py-2 text-xs text-signal-blocked">{pwErr}</p>}
+              <p className="text-xs text-text-muted">You set this password and it is never stored in plaintext — only its Argon2id hash is persisted. All of this user&apos;s active sessions will be revoked, and they will need the new password to sign in again.</p>
+            </div>
+
+            <div className="mt-5 flex justify-end gap-2">
+              <button onClick={closeReset} className="h-10 rounded-lg border border-border px-4 text-sm text-text-muted hover:text-text">Cancel</button>
+              <button onClick={submitReset} disabled={!canSubmit || busy} className="h-10 rounded-lg px-4 text-sm font-medium text-white disabled:opacity-40" style={{ background: 'var(--eureka-signal-cognitive)' }}>Reset password</button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );

@@ -227,7 +227,10 @@ def test_admin_users_export_xlsx(client):
     ws = wb.active
     assert ws.title == "Users"
     rows = list(ws.iter_rows(values_only=True))
-    assert rows[0] == ("Name", "Email", "Phone", "Company", "Role", "Status", "Last Login", "Created At", "Email Verified", "Phone Verified")
+    assert rows[0] == ("User ID", "Name", "Email", "Phone", "Company", "Role", "Status",
+                       "Last Login", "Created At", "Email Verified", "Phone Verified")
+    # requirement: the report must identify the EUREKA user (email, phone, company, EUREKA user)
+    assert rows[1][0] == "USR-ADMIN"
     # export must NEVER contain secrets
     forbidden = ("password", "hash", "token", "secret", "session", "mfa_secret")
     assert not any(any(f in str(h).lower() for f in forbidden) for h in rows[0])
@@ -238,3 +241,135 @@ def test_admin_users_export_denied_for_user(client):
     register_verified(c, store, email="user_x@example.com")
     c.post("/api/auth/login", json={"email": "user_x@example.com", "password": "GoodPass1!"})
     assert c.get("/api/admin/users/export").status_code == 403
+
+
+# ---- admin-initiated password reset (THE recovery path: no mailer exists) ----- #
+def _mk_user(store, user_id, email, role=Role.USER, pw="GoodPass1!", status=UserStatus.ACTIVE):
+    u = User(user_id=user_id, name=user_id, phone="+1", email=email, company="EUREKA",
+             role=role, status=status, password_hash=hash_password(pw),
+             created_at="2026-01-01T00:00:00Z", updated_at="2026-01-01T00:00:00Z")
+    store.users.set(u.user_id, u.model_dump(mode="json"))
+    return u
+
+
+def _login_ok(c, email, pw):
+    r = c.post("/api/auth/login", json={"email": email, "password": pw})
+    assert r.status_code == 200 and r.json()["ok"] is True, r.text
+    return r
+
+
+def test_admin_set_password_restores_access_and_revokes_sessions(client):
+    """The capability that was missing: an admin can restore access, and the old credential dies."""
+    c, store = client
+    _mk_admin(store)
+    _mk_user(store, "USR-VICTIM", "victim@example.com", pw="OldPass123!")
+    _login_ok(c, "victim@example.com", "OldPass123!")
+    assert any(s["user_id"] == "USR-VICTIM" and not s["revoked_at"] for s in store.sessions.values())
+
+    admin_c = TestClient(c.app)  # separate cookie jar: admin session must not clobber the victim's
+    _login_ok(admin_c, "admin@example.com", "GoodPass1!")
+    r = admin_c.post("/api/admin/users/USR-VICTIM/password", json={"password": "BrandNew123!"})
+    assert r.status_code == 200 and r.json()["ok"] is True
+    assert r.json()["user"]["user_id"] == "USR-VICTIM"
+
+    # the secret never comes back, and never reaches the audit trail
+    import json as _json
+    assert "BrandNew123!" not in r.text
+    assert "argon2" not in r.text.lower() and "password_hash" not in r.text
+    events = [e for e in store.events.values() if e["event_type"] == "PASSWORD_RESET_COMPLETED"]
+    assert events and events[-1]["metadata"]["actor_user_id"] == "USR-ADMIN"
+    assert events[-1]["metadata"]["target_user_id"] == "USR-VICTIM"
+    assert "BrandNew123!" not in _json.dumps(events)
+
+    # fail-closed: every session issued under the old password is revoked
+    assert all(s["revoked_at"] for s in store.sessions.values() if s["user_id"] == "USR-VICTIM")
+
+    # old password dead, new password alive
+    assert c.post("/api/auth/login",
+                  json={"email": "victim@example.com", "password": "OldPass123!"}).status_code == 401
+    _login_ok(c, "victim@example.com", "BrandNew123!")
+
+
+def test_admin_set_password_policy_violation_is_atomic(client):
+    """A rejected reset must not mutate anything: the old credential still works."""
+    c, store = client
+    _mk_admin(store)
+    _mk_user(store, "USR-V2", "v2@example.com", pw="OldPass123!")
+    admin_c = TestClient(c.app)
+    _login_ok(admin_c, "admin@example.com", "GoodPass1!")
+    r = admin_c.post("/api/admin/users/USR-V2/password", json={"password": "short"})
+    assert r.status_code == 400 and r.json()["detail"].startswith("PASSWORD_POLICY")
+    assert verify_password("OldPass123!", store.users.get("USR-V2")["password_hash"])
+
+
+def test_admin_set_password_clears_lockout_and_failed_count(client):
+    """Recovery must also release a locked account, or the reset would not restore access."""
+    c, store = client
+    _mk_admin(store)
+    u = _mk_user(store, "USR-LOCK", "lock@example.com", pw="OldPass123!")
+    u.failed_login_count = 9
+    u.locked_until = "2999-01-01T00:00:00Z"
+    store.users.set(u.user_id, u.model_dump(mode="json"))
+    admin_c = TestClient(c.app)
+    _login_ok(admin_c, "admin@example.com", "GoodPass1!")
+    assert admin_c.post("/api/admin/users/USR-LOCK/password",
+                        json={"password": "Fresh12345!"}).status_code == 200
+    saved = store.users.get("USR-LOCK")
+    assert saved["failed_login_count"] == 0 and not saved["locked_until"]
+    _login_ok(c, "lock@example.com", "Fresh12345!")
+
+
+def test_user_cannot_set_any_password(client):
+    """A USER hitting the admin surface directly gets 403 and changes nothing."""
+    c, store = client
+    _mk_user(store, "USR-V3", "v3@example.com", pw="OldPass123!")
+    register_verified(c, store, email="mallory@example.com")
+    _login_ok(c, "mallory@example.com", "GoodPass1!")
+    r = c.post("/api/admin/users/USR-V3/password", json={"password": "Hijacked123!"})
+    assert r.status_code == 403
+    assert verify_password("OldPass123!", store.users.get("USR-V3")["password_hash"])
+
+
+def test_admin_cannot_reset_admin_or_superadmin(client):
+    """No lateral takeover: only a SUPER_ADMIN may reset an ADMIN/SUPER_ADMIN."""
+    c, store = client
+    _mk_admin(store)
+    _mk_user(store, "USR-ADMIN2", "admin2@example.com", role=Role.ADMIN, pw="OtherPass1!")
+    _mk_user(store, "USR-SUPER", "super@example.com", role=Role.SUPER_ADMIN, pw="SuperPass1!")
+    admin_c = TestClient(c.app)
+    _login_ok(admin_c, "admin@example.com", "GoodPass1!")
+    for target in ("USR-ADMIN2", "USR-SUPER"):
+        r = admin_c.post(f"/api/admin/users/{target}/password", json={"password": "Hijacked123!"})
+        assert r.status_code == 403 and r.json()["detail"] == "FORBIDDEN_ROLE"
+    assert verify_password("OtherPass1!", store.users.get("USR-ADMIN2")["password_hash"])
+    assert verify_password("SuperPass1!", store.users.get("USR-SUPER")["password_hash"])
+
+
+def test_superadmin_can_reset_admin(client):
+    c, store = client
+    _mk_user(store, "USR-ROOT", "root@example.com", role=Role.SUPER_ADMIN, pw="RootPass1!")
+    _mk_user(store, "USR-ADMIN3", "admin3@example.com", role=Role.ADMIN, pw="OtherPass1!")
+    root_c = TestClient(c.app)
+    _login_ok(root_c, "root@example.com", "RootPass1!")
+    assert root_c.post("/api/admin/users/USR-ADMIN3/password",
+                       json={"password": "Rotated123!"}).status_code == 200
+    assert verify_password("Rotated123!", store.users.get("USR-ADMIN3")["password_hash"])
+
+
+def test_admin_can_reset_own_password(client):
+    c, store = client
+    _mk_admin(store)
+    admin_c = TestClient(c.app)
+    _login_ok(admin_c, "admin@example.com", "GoodPass1!")
+    assert admin_c.post("/api/admin/users/USR-ADMIN/password",
+                        json={"password": "MyNewPass123!"}).status_code == 200
+    _login_ok(c, "admin@example.com", "MyNewPass123!")
+
+
+def test_admin_set_password_unknown_user_404(client):
+    c, store = client
+    _mk_admin(store)
+    admin_c = TestClient(c.app)
+    _login_ok(admin_c, "admin@example.com", "GoodPass1!")
+    r = admin_c.post("/api/admin/users/USR-NOPE/password", json={"password": "Whatever123!"})
+    assert r.status_code == 404 and r.json()["detail"] == "USER_NOT_FOUND"

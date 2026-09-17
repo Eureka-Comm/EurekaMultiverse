@@ -18,4 +18,12 @@ describe('AdminConsole — light professional EUREKA Users surface', () => {
     expect(html.toLowerCase()).toContain('search by name');
     expect(html).toContain('Export to Excel');
   });
+
+  it('exposes the columns the user report requires: email, phone, company and the EUREKA user', () => {
+    const html = renderToString(createElement(MemoryRouter, null, createElement(AdminConsole)));
+    expect(html).toContain('User ID');
+    expect(html).toContain('Email');
+    expect(html).toContain('Phone');
+    expect(html).toContain('Company');
+  });
 });

@@ -438,6 +438,46 @@ def set_status(store: IdentityStore, actor: User, target_user_id: str, status: U
     return target.public()
 
 
+def admin_set_password(store: IdentityStore, actor: User, target_user_id: str, password: str,
+                       password_policy: Dict[str, Any]) -> SafeUser:
+    """Admin-initiated password reset — the ONLY account-recovery path in this deployment.
+
+    Why it exists: /api/auth/forgot-password generates a token that is discarded (there is no mailer
+    and only its digest is persisted), so without this path NO administrator can restore a user's
+    access. This is the missing capability, not a convenience.
+
+    Authority (mirrors change_role, server-side only):
+      - an ADMIN may reset a USER and their OWN account;
+      - resetting an ADMIN/SUPER_ADMIN requires a SUPER_ADMIN actor (blocking lateral takeover).
+    The password is validated against the policy, never echoed, never logged, and never hashed into
+    the audit trail. All of the target's live sessions are revoked (fail-closed).
+    """
+    target = _require_user(store, target_user_id)
+    if actor.role != Role.SUPER_ADMIN and target.user_id != actor.user_id \
+            and target.role in (Role.ADMIN, Role.SUPER_ADMIN):
+        raise ValueError("FORBIDDEN_ROLE")
+    ok, reason = validate_password(password_policy, password, target.email)
+    if not ok:
+        raise ValueError(f"PASSWORD_POLICY:{reason}")
+
+    target.password_hash = hash_password(password)
+    target.failed_login_count = 0
+    target.locked_until = None
+    _save_user(store, target)
+
+    # Fail-closed: the old password dies here, so every session issued under it dies too.
+    for sid in list(store.sessions.keys()):
+        sess = Session.model_validate(store.sessions.get(sid))
+        if sess.user_id == target.user_id and not sess.revoked_at:
+            sess.revoked_at = _now_iso()
+            store.sessions.set(sid, sess.model_dump(mode="json"))
+
+    _record_event(store, user_id=actor.user_id, event_type=AuthEventType.PASSWORD_RESET_COMPLETED.value,
+                  success=True, metadata={"actor_user_id": actor.user_id, "target_user_id": target.user_id,
+                                          "mode": "ADMIN_SET_PASSWORD"})
+    return target.public()
+
+
 def _count_superadmin(store: IdentityStore) -> int:
     return sum(1 for u in store.users.values() if u.get("role") == Role.SUPER_ADMIN.value)
 

@@ -206,3 +206,12 @@ class AdminRoleRequest(BaseModel):
 
 class AdminStatusRequest(BaseModel):
     status: UserStatus
+
+
+class AdminPasswordRequest(BaseModel):
+    """Admin-initiated password reset body.
+
+    Deliberately carries ONLY a password: it can never escalate role/status, so a malformed or
+    hostile body cannot widen the actor's authority (same doctrine as AdminUserUpdateRequest).
+    """
+    password: str

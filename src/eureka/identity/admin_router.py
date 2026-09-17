@@ -11,9 +11,9 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from pydantic import BaseModel, Field
 
 from .deps import require_role
-from .models import AdminRoleRequest, AdminStatusRequest, Role, User
-from .service import (admin_create_user, change_role, list_users, login_report, set_status,
-                      user_activity)
+from .models import AdminPasswordRequest, AdminRoleRequest, AdminStatusRequest, Role, User
+from .service import (admin_create_user, admin_set_password, change_role, list_users, login_report,
+                      set_status, user_activity)
 from .store import IdentityStore
 from .models import AuthEvent
 
@@ -50,14 +50,15 @@ def make_admin_router(store: IdentityStore, config: Dict[str, Any]) -> APIRouter
         wb = Workbook()
         ws = wb.active
         ws.title = "Users"
-        headers = ["Name", "Email", "Phone", "Company", "Role", "Status",
+        headers = ["User ID", "Name", "Email", "Phone", "Company", "Role", "Status",
                    "Last Login", "Created At", "Email Verified", "Phone Verified"]
         ws.append(headers)
         for u in data:
             ws.append([
-                u.get("name", ""), u.get("email", ""), u.get("phone", ""), u.get("company", ""),
-                u.get("role", ""), u.get("status", ""), u.get("last_login_at") or "",
-                u.get("created_at") or "", bool(u.get("email_verified")), bool(u.get("phone_verified")),
+                u.get("user_id", ""), u.get("name", ""), u.get("email", ""), u.get("phone", ""),
+                u.get("company", ""), u.get("role", ""), u.get("status", ""),
+                u.get("last_login_at") or "", u.get("created_at") or "",
+                bool(u.get("email_verified")), bool(u.get("phone_verified")),
             ])
         buf = io.BytesIO()
         wb.save(buf)
@@ -103,6 +104,27 @@ def make_admin_router(store: IdentityStore, config: Dict[str, Any]) -> APIRouter
             u = set_status(store, actor, user_id, data.status)
         except ValueError as e:
             raise HTTPException(status_code=400, detail=str(e))
+        return {"ok": True, "user": u.model_dump(mode="json")}
+
+    @r.post("/api/admin/users/{user_id}/password")
+    def password_set(user_id: str, data: AdminPasswordRequest, actor: User = Depends(require_admin)):
+        """Admin-initiated password reset — the only account-recovery path (no mailer exists).
+
+        The admin supplies the new password; it is policy-validated server-side, NEVER echoed back
+        and NEVER written to the audit trail. Authorization lives in the service (ADMIN -> USER/self,
+        SUPER_ADMIN -> anyone), so a forged body cannot widen authority.
+        """
+        try:
+            u = admin_set_password(store, actor, user_id, data.password, config["password_policy"])
+        except ValueError as e:
+            msg = str(e)
+            if msg.startswith("PASSWORD_POLICY"):
+                raise HTTPException(status_code=400, detail=msg)
+            if msg == "USER_NOT_FOUND":
+                raise HTTPException(status_code=404, detail=msg)
+            if msg == "FORBIDDEN_ROLE":
+                raise HTTPException(status_code=403, detail=msg)
+            raise HTTPException(status_code=400, detail=msg)
         return {"ok": True, "user": u.model_dump(mode="json")}
 
     @r.get("/api/admin/users/{user_id}/activity")

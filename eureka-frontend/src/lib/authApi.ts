@@ -94,6 +94,15 @@ export function adminChangeRole(userId: string, role: string) {
 export function adminSetStatus(userId: string, status: string) {
   return req<{ ok: boolean; user: SafeUser }>('POST', `/users/${encodeURIComponent(userId)}/status`, { status }, ADMIN_BASE);
 }
+
+/**
+ * Admin-initiated password reset — the only account-recovery path in this deployment (there is no
+ * mailer, so /forgot-password is a dead end). The password is supplied by the admin and never comes
+ * back in the response: only its Argon2id hash is persisted server-side.
+ */
+export function adminSetPassword(userId: string, password: string) {
+  return req<{ ok: boolean; user: SafeUser }>('POST', `/users/${encodeURIComponent(userId)}/password`, { password }, ADMIN_BASE);
+}
 export function adminReportLogins(params: { aggregation?: string; from?: string; to?: string } = {}) {
   const qs = new URLSearchParams();
   if (params.aggregation) qs.set('aggregation', params.aggregation);
