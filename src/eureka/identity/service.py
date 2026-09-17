@@ -15,8 +15,8 @@ from .models import (
     AuthEvent, AuthEventType, MFAChallenge, RegisterRequest, ResetToken, Role, ROLE_PRIORITY,
     SafeUser, Session, User, UserStatus,
 )
-from .security import (digest_token, hash_password, new_token, totp_code, totp_secret, totp_verify,
-                       verify_password)
+from .security import (digest_token, generate_password, hash_password, new_token, totp_code,
+                       totp_secret, totp_verify, verify_password)
 from .store import IdentityStore
 
 
@@ -380,24 +380,61 @@ def list_users(store: IdentityStore, *, search: str = "", role: Optional[str] = 
     return {"total": total, "offset": offset, "limit": limit, "users": [u.public().model_dump(mode="json") for u in rows[offset:offset + limit]]}
 
 
+def _resolve_password(password: Optional[str], policy: Dict[str, Any],
+                      email: str) -> Tuple[str, Optional[str]]:
+    """Return (password_to_hash, generated_password_or_None).
+
+    A caller-supplied password is validated exactly as before. When NONE is supplied the server
+    GENERATES a policy-compliant one and reports it back once: it is never stored in plaintext and can
+    never be read again (only its Argon2id hash persists).
+    """
+    if password:
+        ok, reason = validate_password(policy, password, email)
+        if not ok:
+            raise ValueError(f"PASSWORD_POLICY:{reason}")
+        return password, None
+    min_len = int(policy.get("min_length", 12))
+    for _ in range(8):
+        candidate = generate_password(min_len)
+        ok, _reason = validate_password(policy, candidate, email)
+        if ok:
+            return candidate, candidate
+    raise ValueError("PASSWORD_GENERATION_FAILED")
+
+
 def admin_create_user(store: IdentityStore, actor: User, *, name: str, email: str,
-                      phone: str, company: str, role: Role, password: str,
-                      password_policy: Dict[str, Any]) -> SafeUser:
-    """Admin-invite a user. Role grants are governed: only a SUPER_ADMIN may grant SUPER_ADMIN."""
-    if role == Role.SUPER_ADMIN and actor.role != Role.SUPER_ADMIN:
+                      phone: str, company: str, role: Role, password: Optional[str] = None,
+                      password_policy: Dict[str, Any]) -> Tuple[SafeUser, Optional[str]]:
+    """Admin-creates an account that can sign in IMMEDIATELY (optionally with a generated password).
+
+    Returns ``(user, generated_password)``. Three deliberate decisions, each fixing a real defect:
+
+    * the email is NORMALISED before storage. ``_find_by_email`` lowercases the login input, so storing
+      a mixed-case email made the account permanently unloginnable AND invisible: the attempt was
+      recorded as LOGIN_FAILED with ``user_id=None`` and never incremented ``failed_login_count``.
+    * the status is ACTIVE, never INVITED. With no mailer in this deployment an inactive account is a
+      dead end (a generic 401 with no activation path) — the defect behind "the generated password
+      does not work".
+    * the password is generated only when the caller supplies none, and it is returned once.
+
+    Role grants mirror ``change_role``: only a SUPER_ADMIN may create an ADMIN or SUPER_ADMIN.
+    """
+    if actor.role != Role.SUPER_ADMIN and role in (Role.ADMIN, Role.SUPER_ADMIN):
         raise ValueError("FORBIDDEN_ROLE")
-    if _find_by_email(store, email):
+    canonical_email = normalize_email(email)
+    if _find_by_email(store, canonical_email):
         raise ValueError("ACCOUNT_ALREADY_EXISTS")
-    ok, reason = validate_password(password_policy, password, email)
-    if not ok:
-        raise ValueError(f"PASSWORD_POLICY:{reason}")
-    user = User(user_id=_new_id("USR"), name=name.strip(), phone=phone.strip(), email=email,
-                company=company.strip(), role=role, status=UserStatus.INVITED,
-                password_hash=hash_password(password), created_at=_now_iso(), updated_at=_now_iso())
+    plaintext, generated = _resolve_password(password, password_policy, canonical_email)
+    user = User(user_id=_new_id("USR"), name=name.strip(), phone=phone.strip(),
+                email=canonical_email, company=company.strip(), role=role,
+                status=UserStatus.ACTIVE, password_hash=hash_password(plaintext),
+                created_at=_now_iso(), updated_at=_now_iso())
     store.users.set(user.user_id, user.model_dump(mode="json"))
     _record_event(store, user_id=actor.user_id, event_type="ADMIN_USER_CREATED", success=True,
-                  metadata={"actor_user_id": actor.user_id, "target_user_id": user.user_id, "role": role.value})
-    return user.public()
+                  metadata={"actor_user_id": actor.user_id, "target_user_id": user.user_id,
+                            "role": role.value, "status": user.status.value,
+                            "password_generated": generated is not None})
+    return user.public(), generated
 
 
 def change_role(store: IdentityStore, actor: User, target_user_id: str, new_role: Role, *, superadmin_protection: bool = True) -> SafeUser:
@@ -438,29 +475,29 @@ def set_status(store: IdentityStore, actor: User, target_user_id: str, status: U
     return target.public()
 
 
-def admin_set_password(store: IdentityStore, actor: User, target_user_id: str, password: str,
-                       password_policy: Dict[str, Any]) -> SafeUser:
+def admin_set_password(store: IdentityStore, actor: User, target_user_id: str,
+                       password: Optional[str] = None,
+                       password_policy: Dict[str, Any] = None) -> Tuple[SafeUser, Optional[str]]:
     """Admin-initiated password reset — the ONLY account-recovery path in this deployment.
 
-    Why it exists: /api/auth/forgot-password generates a token that is discarded (there is no mailer
-    and only its digest is persisted), so without this path NO administrator can restore a user's
-    access. This is the missing capability, not a convenience.
+    Returns ``(user, generated_password)``. Why it exists: /api/auth/forgot-password generates a token
+    that is discarded (there is no mailer and only its digest is persisted), so without this path NO
+    administrator can restore a user's access. This is the missing capability, not a convenience.
 
     Authority (mirrors change_role, server-side only):
       - an ADMIN may reset a USER and their OWN account;
       - resetting an ADMIN/SUPER_ADMIN requires a SUPER_ADMIN actor (blocking lateral takeover).
-    The password is validated against the policy, never echoed, never logged, and never hashed into
-    the audit trail. All of the target's live sessions are revoked (fail-closed).
+    A supplied password is validated against the policy; when none is supplied the server GENERATES
+    one and reports it once. Either way it is never echoed into logs, never stored in plaintext and
+    never written to the audit trail. All of the target's live sessions are revoked (fail-closed).
     """
     target = _require_user(store, target_user_id)
     if actor.role != Role.SUPER_ADMIN and target.user_id != actor.user_id \
             and target.role in (Role.ADMIN, Role.SUPER_ADMIN):
         raise ValueError("FORBIDDEN_ROLE")
-    ok, reason = validate_password(password_policy, password, target.email)
-    if not ok:
-        raise ValueError(f"PASSWORD_POLICY:{reason}")
+    plaintext, generated = _resolve_password(password, password_policy or {}, target.email)
 
-    target.password_hash = hash_password(password)
+    target.password_hash = hash_password(plaintext)
     target.failed_login_count = 0
     target.locked_until = None
     _save_user(store, target)
@@ -474,8 +511,9 @@ def admin_set_password(store: IdentityStore, actor: User, target_user_id: str, p
 
     _record_event(store, user_id=actor.user_id, event_type=AuthEventType.PASSWORD_RESET_COMPLETED.value,
                   success=True, metadata={"actor_user_id": actor.user_id, "target_user_id": target.user_id,
-                                          "mode": "ADMIN_SET_PASSWORD"})
-    return target.public()
+                                          "mode": "ADMIN_SET_PASSWORD",
+                                          "password_generated": generated is not None})
+    return target.public(), generated
 
 
 def _count_superadmin(store: IdentityStore) -> int:

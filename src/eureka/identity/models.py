@@ -211,7 +211,9 @@ class AdminStatusRequest(BaseModel):
 class AdminPasswordRequest(BaseModel):
     """Admin-initiated password reset body.
 
-    Deliberately carries ONLY a password: it can never escalate role/status, so a malformed or
-    hostile body cannot widen the actor's authority (same doctrine as AdminUserUpdateRequest).
+    Deliberately carries ONLY a password and the generate flag: it can never escalate role/status, so a
+    malformed or hostile body cannot widen the actor's authority (same doctrine as
+    AdminUserUpdateRequest). With ``generate=True`` (or no password) the server generates one.
     """
-    password: str
+    password: Optional[str] = None
+    generate: bool = False

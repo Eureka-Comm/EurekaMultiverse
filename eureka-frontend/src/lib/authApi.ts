@@ -96,12 +96,32 @@ export function adminSetStatus(userId: string, status: string) {
 }
 
 /**
- * Admin-initiated password reset — the only account-recovery path in this deployment (there is no
- * mailer, so /forgot-password is a dead end). The password is supplied by the admin and never comes
- * back in the response: only its Argon2id hash is persisted server-side.
+ * Admin-created account. The server NORMALISES the email, activates the account immediately (this
+ * deployment has no mailer, so an INVITED account could never sign in) and, when `password` is
+ * omitted, GENERATES one and returns it ONCE as `generated_password` — only its Argon2id hash is
+ * stored, so it can never be read back.
  */
-export function adminSetPassword(userId: string, password: string) {
-  return req<{ ok: boolean; user: SafeUser }>('POST', `/users/${encodeURIComponent(userId)}/password`, { password }, ADMIN_BASE);
+export function adminCreateUser(data: { name: string; email: string; phone?: string; company?: string;
+  role?: string; password?: string }) {
+  return req<{ ok: boolean; user: SafeUser; password_generated: boolean; generated_password?: string }>(
+    'POST', '/users', data, ADMIN_BASE);
+}
+
+/**
+ * Admin-initiated password reset — the only account-recovery path in this deployment (there is no
+ * mailer, so /forgot-password is a dead end). Send `{ password }` to type one, or `{ generate: true }`
+ * to have the server generate it; a generated password comes back ONCE.
+ */
+export function adminSetPassword(userId: string, body: { password?: string; generate?: boolean }) {
+  return req<{ ok: boolean; user: SafeUser; password_generated: boolean; generated_password?: string }>(
+    'POST', `/users/${encodeURIComponent(userId)}/password`, body, ADMIN_BASE);
+}
+
+/** Full admin view of one account: the safe profile plus the login-diagnosis fields (no secrets). */
+export function adminGetUser(userId: string) {
+  return req<{ user: SafeUser; security: { failed_login_count: number; locked_until: string | null;
+    mfa_enabled: boolean; updated_at: string; created_at: string; last_login_at: string | null } }>(
+    'GET', `/users/${encodeURIComponent(userId)}`, undefined, ADMIN_BASE);
 }
 export function adminReportLogins(params: { aggregation?: string; from?: string; to?: string } = {}) {
   const qs = new URLSearchParams();

@@ -24,7 +24,8 @@ class AdminCreateUserRequest(BaseModel):
     phone: str = ""
     company: str = ""
     role: Role = Role.USER
-    password: str
+    #: Omitted/empty -> the server generates a policy-compliant password and returns it once.
+    password: Optional[str] = None
 
 
 def make_admin_router(store: IdentityStore, config: Dict[str, Any]) -> APIRouter:
@@ -72,21 +73,45 @@ def make_admin_router(store: IdentityStore, config: Dict[str, Any]) -> APIRouter
 
     @r.get("/api/admin/users/{user_id}")
     def get_user(user_id: str, _: User = Depends(require_admin)):
+        """Full admin view of ONE account: the safe profile + the login-diagnosis fields.
+
+        The extra `security` block is what an operator needs to answer "why can this person not sign
+        in?" (failed attempts, lockout, MFA). It carries NO secret: the hash is never exposed.
+        """
         from .service import _find_by_id
         u = _find_by_id(store, user_id)
         if u is None:
             raise HTTPException(status_code=404, detail="USER_NOT_FOUND")
-        return {"user": u.public().model_dump(mode="json")}
+        return {"user": u.public().model_dump(mode="json"),
+                "security": {"failed_login_count": u.failed_login_count,
+                             "locked_until": u.locked_until,
+                             "mfa_enabled": u.mfa_enabled,
+                             "updated_at": u.updated_at,
+                             "created_at": u.created_at,
+                             "last_login_at": u.last_login_at}}
 
     @r.post("/api/admin/users")
     def create_user(data: AdminCreateUserRequest, actor: User = Depends(require_admin)):
+        """Create an account that can sign in IMMEDIATELY.
+
+        With `password` omitted (or empty) the server GENERATES one and returns it ONCE in
+        `generated_password`: it cannot be read again, because only its Argon2id hash is stored. The
+        admin hands it to the user; nothing about it is logged.
+        """
         try:
-            u = admin_create_user(store, actor, name=data.name, email=data.email, phone=data.phone,
-                                  company=data.company, role=data.role, password=data.password,
-                                  password_policy=config["password_policy"])
+            u, generated = admin_create_user(store, actor, name=data.name, email=data.email,
+                                             phone=data.phone, company=data.company, role=data.role,
+                                             password=data.password,
+                                             password_policy=config["password_policy"])
         except ValueError as e:
-            raise HTTPException(status_code=400, detail=str(e))
-        return {"ok": True, "user": u.model_dump(mode="json")}
+            msg = str(e)
+            code = 403 if msg == "FORBIDDEN_ROLE" else 400
+            raise HTTPException(status_code=code, detail=msg)
+        body = {"ok": True, "user": u.model_dump(mode="json"),
+                "password_generated": generated is not None}
+        if generated is not None:
+            body["generated_password"] = generated          # shown ONCE, never retrievable again
+        return body
 
     @r.post("/api/admin/users/{user_id}/role")
     def role_change(user_id: str, data: AdminRoleRequest, actor: User = Depends(require_admin)):
@@ -110,12 +135,15 @@ def make_admin_router(store: IdentityStore, config: Dict[str, Any]) -> APIRouter
     def password_set(user_id: str, data: AdminPasswordRequest, actor: User = Depends(require_admin)):
         """Admin-initiated password reset — the only account-recovery path (no mailer exists).
 
-        The admin supplies the new password; it is policy-validated server-side, NEVER echoed back
-        and NEVER written to the audit trail. Authorization lives in the service (ADMIN -> USER/self,
-        SUPER_ADMIN -> anyone), so a forged body cannot widen authority.
+        Either the admin supplies the password (policy-validated server-side) or asks the server to
+        GENERATE one with `generate: true`; a generated password comes back ONCE. Either way it is
+        NEVER echoed into the audit trail and never stored in plaintext. Authorization lives in the
+        service (ADMIN -> USER/self, SUPER_ADMIN -> anyone), so a forged body cannot widen authority.
         """
+        supplied = None if data.generate else (data.password or None)
         try:
-            u = admin_set_password(store, actor, user_id, data.password, config["password_policy"])
+            u, generated = admin_set_password(store, actor, user_id, supplied,
+                                              config["password_policy"])
         except ValueError as e:
             msg = str(e)
             if msg.startswith("PASSWORD_POLICY"):
@@ -125,7 +153,11 @@ def make_admin_router(store: IdentityStore, config: Dict[str, Any]) -> APIRouter
             if msg == "FORBIDDEN_ROLE":
                 raise HTTPException(status_code=403, detail=msg)
             raise HTTPException(status_code=400, detail=msg)
-        return {"ok": True, "user": u.model_dump(mode="json")}
+        body = {"ok": True, "user": u.model_dump(mode="json"),
+                "password_generated": generated is not None}
+        if generated is not None:
+            body["generated_password"] = generated          # shown ONCE, never retrievable again
+        return body
 
     @r.get("/api/admin/users/{user_id}/activity")
     def activity(user_id: str, _: User = Depends(require_admin)):

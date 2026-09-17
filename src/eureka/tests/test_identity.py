@@ -373,3 +373,150 @@ def test_admin_set_password_unknown_user_404(client):
     _login_ok(admin_c, "admin@example.com", "GoodPass1!")
     r = admin_c.post("/api/admin/users/USR-NOPE/password", json={"password": "Whatever123!"})
     assert r.status_code == 404 and r.json()["detail"] == "USER_NOT_FOUND"
+
+
+# ---- admin user creation: the account must be able to sign in IMMEDIATELY ------ #
+def _create(c, **fields):
+    body = {"name": "Nuevo Usuario", "email": "nuevo@example.com", "phone": "+34 600111222",
+            "company": "ACME"}
+    body.update(fields)
+    return c.post("/api/admin/users", json=body)
+
+
+def _admin_client(c, store):
+    """A separate cookie jar logged in as the canonical fixture ADMIN (idempotent)."""
+    _mk_admin(store)
+    admin_c = TestClient(c.app)
+    _login_ok(admin_c, "admin@example.com", "GoodPass1!")
+    return admin_c
+
+
+def test_admin_created_user_signs_in_immediately_with_the_generated_password(client):
+    """THE requirement: create -> server-generated password -> the user signs in. No dead end.
+
+    Also covers the email-normalisation defect: the account is created with a MIXED-CASE email, and
+    `_find_by_email` lowercases the login input — before the fix this account was permanently
+    unloginnable and the failure was invisible (LOGIN_FAILED with user_id=None, no counter bump).
+    """
+    c, store = client
+    admin_c = _admin_client(c, store)
+    r = _create(admin_c, email="Nuevo.Usuario@Example.COM")
+    assert r.status_code == 200, r.text
+    body = r.json()
+    assert body["ok"] is True and body["password_generated"] is True
+    generated = body["generated_password"]
+    assert body["user"]["status"] == "ACTIVE"                     # never INVITED
+    assert body["user"]["email"] == "nuevo.usuario@example.com"    # normalised at storage
+    assert "password_hash" not in r.text and "argon2" not in r.text.lower()
+
+    ok, reason = validate_password(identity_config()["password_policy"], generated,
+                                   "nuevo.usuario@example.com")
+    assert ok, reason
+
+    _login_ok(c, "nuevo.usuario@example.com", generated)            # the admin hands it over
+    fresh = TestClient(c.app)
+    _login_ok(fresh, "NUEVO.USUARIO@EXAMPLE.COM", generated)        # any casing works
+
+
+def test_generated_password_is_never_stored_or_audited_in_plaintext(client):
+    c, store = client
+    admin_c = _admin_client(c, store)
+    generated = _create(admin_c).json()["generated_password"]
+    uid = next(u["user_id"] for u in store.users.values() if u["email"] == "nuevo@example.com")
+
+    import json as _json
+    record = store.users.get(uid)
+    assert generated not in _json.dumps(record)
+    assert record["password_hash"].startswith("$argon2id$")
+    assert generated not in _json.dumps(list(store.events.values()))
+    event = [e for e in store.events.values() if e["event_type"] == "ADMIN_USER_CREATED"][-1]
+    assert event["metadata"]["password_generated"] is True
+    assert event["metadata"]["status"] == "ACTIVE"
+
+
+def test_two_created_users_receive_different_passwords(client):
+    c, store = client
+    admin_c = _admin_client(c, store)
+    first = _create(admin_c, email="uno@example.com").json()["generated_password"]
+    second = _create(admin_c, email="dos@example.com").json()["generated_password"]
+    assert first != second
+
+
+def test_admin_may_still_supply_the_password_explicitly(client):
+    c, store = client
+    admin_c = _admin_client(c, store)
+    body = _create(admin_c, email="elegido@example.com", password="TypedByAdmin1!").json()
+    assert body["password_generated"] is False and "generated_password" not in body
+    _login_ok(c, "elegido@example.com", "TypedByAdmin1!")
+
+
+def test_created_user_with_a_weak_supplied_password_is_refused_atomically(client):
+    c, store = client
+    admin_c = _admin_client(c, store)
+    r = _create(admin_c, email="debil@example.com", password="short")
+    assert r.status_code == 400 and r.json()["detail"].startswith("PASSWORD_POLICY")
+    assert not any(u["email"] == "debil@example.com" for u in store.users.values())
+
+
+def test_duplicate_email_is_refused_case_insensitively(client):
+    c, store = client
+    admin_c = _admin_client(c, store)
+    assert _create(admin_c, email="Dup@Example.com").status_code == 200
+    second = _create(admin_c, email="dup@EXAMPLE.com")
+    assert second.status_code == 400 and second.json()["detail"] == "ACCOUNT_ALREADY_EXISTS"
+
+
+def test_admin_cannot_create_an_admin_or_superadmin(client):
+    """Mirrors change_role: creating a privileged account is a SUPER_ADMIN-only grant."""
+    c, store = client
+    admin_c = _admin_client(c, store)
+    for role in ("ADMIN", "SUPER_ADMIN"):
+        r = _create(admin_c, email=f"{role.lower()}x@example.com", role=role)
+        assert r.status_code == 403 and r.json()["detail"] == "FORBIDDEN_ROLE"
+    assert not any(u["email"].endswith("x@example.com") for u in store.users.values())
+
+
+def test_superadmin_can_create_an_admin(client):
+    c, store = client
+    _mk_user(store, "USR-ROOT", "root@example.com", role=Role.SUPER_ADMIN, pw="RootPass1!")
+    root_c = TestClient(c.app)
+    _login_ok(root_c, "root@example.com", "RootPass1!")
+    r = _create(root_c, email="nuevoadmin@example.com", role="ADMIN")
+    assert r.status_code == 200 and r.json()["user"]["role"] == "ADMIN"
+    _login_ok(c, "nuevoadmin@example.com", r.json()["generated_password"])
+
+
+def test_an_explicitly_invited_account_still_cannot_sign_in(client):
+    """The INVITED gate itself is preserved — what changed is that CREATION no longer produces it."""
+    c, store = client
+    _mk_user(store, "USR-INV", "invitado@example.com", status=UserStatus.INVITED, pw="GoodPass1!")
+    r = c.post("/api/auth/login", json={"email": "invitado@example.com", "password": "GoodPass1!"})
+    assert r.status_code == 401
+    assert store.users.get("USR-INV")["failed_login_count"] == 0   # blocked by status, not by password
+
+
+def test_admin_resets_a_password_with_a_server_generated_one(client):
+    c, store = client
+    admin_c = _admin_client(c, store)
+    _mk_user(store, "USR-V9", "v9@example.com", pw="OldPass123!")
+    r = admin_c.post("/api/admin/users/USR-V9/password", json={"generate": True})
+    assert r.status_code == 200
+    body = r.json()
+    assert body["password_generated"] is True
+    generated = body["generated_password"]
+    assert verify_password("OldPass123!", store.users.get("USR-V9")["password_hash"]) is False
+    _login_ok(c, "v9@example.com", generated)
+
+
+def test_admin_user_detail_exposes_login_diagnosis_without_secrets(client):
+    c, store = client
+    admin_c = _admin_client(c, store)
+    _mk_user(store, "USR-DIAG", "diag@example.com", pw="OldPass123!")
+    c.post("/api/auth/login", json={"email": "diag@example.com", "password": "WrongPass123!"})
+    r = admin_c.get("/api/admin/users/USR-DIAG")
+    assert r.status_code == 200
+    body = r.json()
+    assert body["user"]["email"] == "diag@example.com"
+    assert body["security"]["failed_login_count"] == 1      # the reason becomes visible to the admin
+    assert "locked_until" in body["security"] and "mfa_enabled" in body["security"]
+    assert "password_hash" not in r.text and "argon2" not in r.text.lower()

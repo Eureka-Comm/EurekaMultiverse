@@ -37,6 +37,33 @@ def verify_password(password: str, password_hash: str) -> bool:
         return False
 
 
+#: Unambiguous glyphs only (no 0/O, no 1/l/I) so a generated password can be read aloud, retyped or
+#: copied into a chat without transcription errors.
+_PW_ALPHABET = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789"
+_PW_SYMBOLS = "!@#$%&*?-_"
+
+
+def generate_password(min_length: int = 16, *, symbols: bool = True) -> str:
+    """Crypto-random password that satisfies the declared policy BY CONSTRUCTION.
+
+    Guarantees an uppercase letter, a lowercase letter and a digit (the policy requires a letter and a
+    digit), excludes ambiguous glyphs, and is sized from the policy's own ``min_length`` so a stricter
+    policy can never be handed a password it would reject.
+    """
+    length = max(int(min_length), 16)
+    pool = _PW_ALPHABET + (_PW_SYMBOLS if symbols else "")
+    while True:
+        chars = [secrets.choice("ABCDEFGHJKLMNPQRSTUVWXYZ"),
+                 secrets.choice("abcdefghijkmnopqrstuvwxyz"),
+                 secrets.choice("23456789")]
+        chars += [secrets.choice(pool) for _ in range(length - len(chars))]
+        secrets.SystemRandom().shuffle(chars)
+        candidate = "".join(chars)
+        if any(c.isupper() for c in candidate) and any(c.islower() for c in candidate) \
+                and any(c.isdigit() for c in candidate):
+            return candidate
+
+
 # --------------------------------------------------------------------------- #
 # Opaque tokens
 # --------------------------------------------------------------------------- #

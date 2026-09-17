@@ -60,3 +60,29 @@ export function resetBlockedReason(target: { status: string }): string | null {
   if (target.status === 'ACTIVE') return null;
   return `This account is ${target.status}: the new password will not let the user sign in until the account is ACTIVE.`;
 }
+
+/** Mirrors the server rule for CREATION: only a SUPER_ADMIN may create an ADMIN/SUPER_ADMIN. */
+export function canGrantRole(actorRole: string | undefined, targetRole: string): boolean {
+  const actor = (actorRole ?? '').toUpperCase();
+  if (actor === 'SUPER_ADMIN') return true;
+  if (actor !== 'ADMIN') return false;
+  return targetRole === 'USER';
+}
+
+/** Roles the actor may hand out; the select never offers what the server would refuse with 403. */
+export function grantableRoles(actorRole: string | undefined): string[] {
+  return (actorRole ?? '').toUpperCase() === 'SUPER_ADMIN' ? ['USER', 'ADMIN', 'SUPER_ADMIN'] : ['USER'];
+}
+
+/**
+ * Minimal create-form validation. The server stays authoritative (it re-checks the policy, the
+ * duplicate email and the role grant); this only stops an obviously invalid submission.
+ */
+export function createUserIssues(form: { name: string; email: string }): string[] {
+  const issues: string[] = [];
+  if (!form.name.trim()) issues.push('Name is required.');
+  const email = form.email.trim();
+  if (!email) issues.push('Email is required.');
+  else if (!/^[^@\s]+@[^@\s.]+\.[^@\s]+$/.test(email)) issues.push('Enter a valid email address.');
+  return issues;
+}

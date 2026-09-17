@@ -17,6 +17,7 @@ describe('AdminConsole — light professional EUREKA Users surface', () => {
     expect(html).toContain('Audit');
     expect(html.toLowerCase()).toContain('search by name');
     expect(html).toContain('Export to Excel');
+    expect(html).toContain('Create user');
   });
 
   it('exposes the columns the user report requires: email, phone, company and the EUREKA user', () => {
