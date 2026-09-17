@@ -34,6 +34,17 @@ echo "  dir      : $DEPLOY_DIR"
 echo "  rama     : $(git rev-parse --abbrev-ref HEAD)"
 echo "  commit   : $(git log -1 --format='%h %s')"
 
+# GUARDA: un deploy hace 'git reset --hard'. Si hay ficheros VERSIONADOS modificados en el servidor se
+# perderian en silencio (paso una vez: un docker-compose.yml ajustado a mano con el montaje de datos).
+DIRTY="$(git status --porcelain --untracked-files=no)"
+if [ -n "$DIRTY" ]; then
+  echo ""
+  echo "ERROR: hay ficheros versionados MODIFICADOS en este servidor:"
+  printf '%s\n' "$DIRTY" | sed 's/^/    /'
+  echo "       'git reset --hard' los descartaria. Guardalos, commitealos, o repite con FORCE=1."
+  if [ "${FORCE:-0}" = "1" ]; then echo "       FORCE=1: continuo y los descarto."; else exit 1; fi
+fi
+
 say "1) Datos y secretos (NO se tocan)"
 if [ -d "$DEPLOY_DIR/data" ]; then
   echo "  data/    : $(du -sh "$DEPLOY_DIR/data" 2>/dev/null | cut -f1) — el despliegue NO lo modifica"
@@ -104,6 +115,26 @@ for _ in $(seq 1 40); do
   sleep 2
 done
 echo "  backend /api/health  -> $CODE"
+
+# LA COMPROBACION QUE FALTABA: que la app VEA el almacen real. Sin el montaje ./data -> /app/data el
+# contenedor arranca con un store VACIO, /api/health responde 200 y el login falla para todo el mundo.
+MOUNTS="$(docker inspect eureka-backend --format '{{json .Mounts}}' 2>/dev/null || echo '[]')"
+case "$MOUNTS" in
+  *"/app/data"*) echo "  montaje de datos     -> OK (/app/data montado)" ;;
+  *) echo "  ERROR: el contenedor NO tiene montado /app/data: correra con un almacen VACIO."
+     echo "         mounts = $MOUNTS"
+     echo "         Revisa 'volumes: - ./data:/app/data' en docker-compose.yml y vuelve a 'up -d'." ;;
+esac
+SEEN="$(docker exec eureka-backend python -c "import json,os
+p='/app/data/identity/users.json'
+print(len(json.load(open(p))) if os.path.exists(p) else 0)" 2>/dev/null || echo '?')"
+echo "  cuentas que ve la app -> $SEEN"
+case "$SEEN" in
+  0) echo "    -> AVISO: la app no ve NINGUNA cuenta. Si el store tenia usuarios, falta el montaje." ;;
+  '?') echo "    -> AVISO: no pude consultarlo (¿contenedor caido?)" ;;
+  *) echo "    -> OK: la app esta leyendo el store persistente" ;;
+esac
+
 RST="$(curl -s -o /dev/null -w '%{http_code}' -X POST \
   "http://127.0.0.1:$BACK_PORT/api/admin/users/USR-NOPE/password" \
   -H 'Content-Type: application/json' -d '{"generate":true}' || true)"

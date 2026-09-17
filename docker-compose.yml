@@ -14,6 +14,13 @@ services:
       dockerfile: Dockerfile.backend
     image: eureka-backend:latest
     container_name: eureka-backend
+    volumes:
+      # DURABLE DATA — identity store (users/sessions/events/tokens) + works + evidence.
+      # WITHOUT this mount the app keeps its store inside the container layer, so EVERY rebuild or
+      # deploy starts from an EMPTY store: accounts and works vanish (they are not deleted, they
+      # simply become invisible). ./data resolves to <checkout>/data locally and to /opt/eureka/data
+      # in production — the same layout, no env var needed.
+      - ./data:/app/data
     environment:
       # Secret comes from the host .env (never baked into the image or repo).
       DEEPSEEK_API_KEY: ${DEEPSEEK_API_KEY:-}
