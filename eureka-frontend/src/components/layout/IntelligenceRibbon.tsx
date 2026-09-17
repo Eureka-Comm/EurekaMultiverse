@@ -1,19 +1,22 @@
 import { NavLink } from "react-router-dom";
 import { cn } from "../../lib/utils";
+import { useAuthStore, isAdmin } from "../../store/authStore";
 import {
   Brain,
   Database,
   FolderOpen,
   LayoutDashboard,
   Network,
-  Settings,
+  Users,
   Shield,
   Activity,
   History,
   Workflow
 } from "lucide-react";
 
-const NAV_ITEMS = [
+type NavItem = { icon: typeof Brain; label: string; path: string; adminOnly?: boolean };
+
+const NAV_ITEMS: { group: string; items: NavItem[] }[] = [
   { group: "WORKSPACE", items: [
     { icon: LayoutDashboard, label: "Overview", path: "/" },
     { icon: FolderOpen, label: "Cases", path: "/cases" },
@@ -32,11 +35,13 @@ const NAV_ITEMS = [
   ]},
   { group: "SYSTEM", items: [
     { icon: History, label: "Audit", path: "/audit" },
-    { icon: Settings, label: "Settings", path: "/settings" },
+    // Settings was removed: the admin console is the only system surface, and only an admin sees it.
+    { icon: Users, label: "Administration", path: "/admin", adminOnly: true },
   ]},
 ];
 
 export function IntelligenceRibbon() {
+  const admin = isAdmin(useAuthStore((s) => s.user)?.role);
   return (
     <nav className="w-16 md:w-64 flex flex-col border-r border-[var(--eureka-spatial-hairline)] bg-surface shrink-0 h-full overflow-y-auto">
       <div className="p-4 border-b border-[var(--eureka-spatial-hairline)]">
@@ -54,7 +59,7 @@ export function IntelligenceRibbon() {
             <div className="px-4 text-[10px] uppercase font-mono text-text-micro tracking-widest hidden md:block mb-1">
               {group.group}
             </div>
-            {group.items.map((item) => (
+            {group.items.filter((item) => !item.adminOnly || admin).map((item) => (
               <NavLink
                 key={item.path}
                 to={item.path}

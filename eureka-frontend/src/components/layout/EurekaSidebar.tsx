@@ -1,11 +1,12 @@
 import React, { useState } from 'react';
 import { useWorkStore } from '../../store/workStore';
 import { useAuthStore, isAdmin } from '../../store/authStore';
-import { Plus, Settings, FolderOpen, Search, SlidersHorizontal, PanelRightClose, PanelRight, Shield, LogOut } from 'lucide-react';
+import { Plus, FolderOpen, Search, SlidersHorizontal, PanelRightClose, PanelRight, Shield, LogOut } from 'lucide-react';
 
 /**
  * EUREKA left sidebar (estilo DeepSeek Harness, colapsable, iconos SVG funcionales).
- * "New Session" -> limpia el work; Workspaces -> muestra la sesión activa; Settings.
+ * "New Session" -> limpia el work; Workspaces -> muestra la sesión activa; Administration -> consola
+ * de administración (/admin, restringida por rol en UI y en el backend).
  * Se puede contraer/expandir con el toggle de la esquina superior derecha.
  */
 export default function EurekaSidebar() {
@@ -26,7 +27,6 @@ export default function EurekaSidebar() {
         <div className="flex-1" />
         <button onClick={() => window.location.assign('/admin')} title="Administration" className="p-2 text-[var(--eureka-text-label)] hover:text-[var(--eureka-text-display)] transition-colors"><Shield size={18} /></button>
         <button onClick={() => void logout()} title="Logout" className="p-2 text-[var(--eureka-text-label)] hover:text-[var(--eureka-text-display)] transition-colors"><LogOut size={18} /></button>
-        <button onClick={() => window.location.assign('/legacy/settings')} title="Settings" className="p-2 text-[var(--eureka-text-label)] hover:text-[var(--eureka-text-display)] transition-colors"><Settings size={18} /></button>
       </aside>
     );
   }
@@ -82,13 +82,6 @@ export default function EurekaSidebar() {
           </button>
         </div>
       )}
-
-      {/* SETTINGS */}
-      <div className="px-3 py-3 border-t border-[var(--eureka-spatial-hairline)]">
-        <button onClick={() => window.location.assign('/legacy/settings')} className="flex items-center gap-2 text-sm text-[var(--eureka-text-label)] hover:text-[var(--eureka-text-display)] transition-colors px-2 py-1.5">
-          <Settings size={15} /> Settings
-        </button>
-      </div>
 
       {/* ACCOUNT / SESSION */}
       <div className="px-3 py-3 border-t border-[var(--eureka-spatial-hairline)]">

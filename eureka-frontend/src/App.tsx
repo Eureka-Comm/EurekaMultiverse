@@ -1,5 +1,5 @@
 import React from "react";
-import { createBrowserRouter, RouterProvider } from "react-router-dom";
+import { createBrowserRouter, RouterProvider, Navigate } from "react-router-dom";
 import { EurekaShell } from "./components/layout/EurekaShell";
 import Overview from "./pages/Overview";
 import CasesList from "./pages/Cases/CasesList";
@@ -28,7 +28,6 @@ import Timeline from "./pages/Story/Timeline";
 import Agents from "./pages/System/Agents";
 import Runtime from "./pages/System/Runtime";
 import Audit from "./pages/System/Audit";
-import Settings from "./pages/System/Settings";
 
 import UniversalRoot from "./pages/UniversalRoot";
 import RequireAuth from "./components/auth/RequireAuth";
@@ -143,7 +142,9 @@ const router = createBrowserRouter([
       { path: "agents", element: <Agents /> },
       { path: "runtime", element: <Runtime /> },
       { path: "audit", element: <Audit /> },
-      { path: "settings", element: <Settings /> },
+      // Settings was removed: the admin console is the only system surface. Old bookmarks keep working
+      // by landing on it (the route is already admin-gated by RequireAuth).
+      { path: "settings", element: <Navigate to="/admin" replace /> },
     ],
   },
 ]);

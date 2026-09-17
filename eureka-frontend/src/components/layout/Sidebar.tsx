@@ -3,7 +3,7 @@ import { cn } from "../../lib/utils";
 import {
   LayoutDashboard, FolderOpen, Database, MessagesSquare, FileCode2, LineChart, 
   Target, Calculator, Scale, AlertTriangle, ShieldCheck, PlayCircle, History, 
-  Settings, Box, CheckCircle2, Lock, Unlock
+  Settings, Box, CheckCircle2, Lock, Unlock, Users
 } from "lucide-react";
 
 interface NavItem {
@@ -77,7 +77,7 @@ const navGroups: NavGroup[] = [
       { name: "Agents", href: "/agents", icon: Box },
       { name: "Runtime", href: "/runtime", icon: Settings },
       { name: "Audit", href: "/audit", icon: ShieldCheck },
-      { name: "Settings", href: "/settings", icon: Settings },
+      { name: "Administration", href: "/admin", icon: Users },
     ]
   }
 ];
